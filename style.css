@@ -2608,4 +2608,138 @@ input:focus:not(:focus-visible) {
         font-size: 0.92rem;
         padding: 1rem 0;
     }
+    
+    .fee-results-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .scarcity-legend {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+}
+
+/* ===== Scarcity Model Section ===== */
+
+.scarcity-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.scarcity-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.scarcity-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.legend-swatch {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ===== Fee Revenue Estimator ===== */
+
+.fee-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.fee-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .fee-controls {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+.fee-results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.fee-result-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.fee-result-card:hover {
+    border-color: rgba(212,168,83,0.2);
+}
+
+.fee-result-highlight {
+    border-color: rgba(212,168,83,0.15);
+    background: rgba(212,168,83,0.04);
+}
+
+.fee-result-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.fee-result-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: #d4a853;
+    margin-bottom: 0.25rem;
+}
+
+.fee-result-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fee-context {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+}
+
+.fee-context h4 {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0.5rem;
+}
+
+.fee-context p {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.7;
 }

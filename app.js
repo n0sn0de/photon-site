@@ -821,7 +821,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .faq-item'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .scarcity-container, .fee-container, .fee-result-card, .fee-context, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .faq-item'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -845,6 +845,202 @@ function initNavigation() {
 
 // ===== Init =====
 
+// ===== Scarcity Model =====
+
+function initScarcityModel() {
+    const inflSlider = document.getElementById('scarcity-inflation');
+    if (!inflSlider) return;
+
+    const update = () => drawScarcityModel();
+    inflSlider.addEventListener('input', update);
+    drawScarcityModel();
+}
+
+function drawScarcityModel() {
+    const inflation = parseFloat(document.getElementById('scarcity-inflation').value) / 100;
+    document.getElementById('scarcity-inflation-val').textContent = (inflation * 100).toFixed(1) + '%';
+
+    const currentAtone = chainData.atoneSupply
+        ? Number(chainData.atoneSupply / 1_000_000n)
+        : 136_731_102;
+    const currentPhoton = chainData.photonSupply
+        ? Number(chainData.photonSupply / 1_000_000n)
+        : 74_000_000;
+
+    const years = 10;
+    const months = years * 12;
+    const monthlyInfl = Math.pow(1 + inflation, 1/12) - 1;
+
+    // Scenarios: % of initial ATONE supply burned over 10 years (spread linearly)
+    const burnScenarios = [
+        { label: '5%', pct: 0.05, color: '#4ade80' },
+        { label: '20%', pct: 0.20, color: '#d4a853' },
+        { label: '50%', pct: 0.50, color: '#f87171' },
+    ];
+    const baselineColor = 'rgba(255,255,255,0.2)';
+
+    // Baseline (no burn, just inflation)
+    const baselinePoints = [];
+    let bAtone = currentAtone;
+    for (let m = 0; m <= months; m++) {
+        const rate = (PHOTON_MAX_SUPPLY - currentPhoton) / bAtone;
+        baselinePoints.push({ month: m, rate });
+        bAtone *= (1 + monthlyInfl);
+    }
+
+    // Each burn scenario
+    const scenarioPoints = burnScenarios.map(sc => {
+        const points = [];
+        let atone = currentAtone;
+        let photon = currentPhoton;
+        const totalBurn = currentAtone * sc.pct;
+        const monthlyBurn = totalBurn / months;
+        for (let m = 0; m <= months; m++) {
+            const rate = (PHOTON_MAX_SUPPLY - photon) / atone;
+            points.push({ month: m, rate });
+            // Apply inflation first
+            atone *= (1 + monthlyInfl);
+            // Then burn (reducing atone, increasing photon)
+            if (atone > monthlyBurn) {
+                const convRate = (PHOTON_MAX_SUPPLY - photon) / atone;
+                const photonMinted = monthlyBurn * convRate;
+                atone -= monthlyBurn;
+                photon += photonMinted;
+                if (photon > PHOTON_MAX_SUPPLY) photon = PHOTON_MAX_SUPPLY;
+            }
+        }
+        return { ...sc, points };
+    });
+
+    // Update result values
+    document.getElementById('scarcity-rate-base').textContent = baselinePoints[baselinePoints.length - 1].rate.toFixed(4);
+    scenarioPoints.forEach(sc => {
+        const elId = 'scarcity-rate-' + sc.label.replace('%','');
+        const el = document.getElementById(elId);
+        if (el) el.textContent = sc.points[sc.points.length - 1].rate.toFixed(4);
+    });
+
+    // Draw on canvas
+    const canvas = document.getElementById('scarcity-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width - 48;
+    const h = 350;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const padLeft = 65, padRight = 20, padTop = 25, padBottom = 40;
+    const chartW = w - padLeft - padRight;
+    const chartH = h - padTop - padBottom;
+
+    // Find y-range across all series
+    const allRates = [
+        ...baselinePoints.map(p => p.rate),
+        ...scenarioPoints.flatMap(s => s.points.map(p => p.rate))
+    ];
+    const maxRate = Math.max(...allRates) * 1.05;
+    const minRate = Math.min(...allRates) * 0.95;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    const gridN = 5;
+    for (let i = 0; i <= gridN; i++) {
+        const y = padTop + (chartH / gridN) * i;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(padLeft + chartW, y);
+        ctx.stroke();
+        const val = maxRate - (maxRate - minRate) * (i / gridN);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '11px "DM Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(val.toFixed(2), padLeft - 8, y + 4);
+    }
+
+    // X labels
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'center';
+    for (let yr = 0; yr <= years; yr += 2) {
+        const x = padLeft + (yr * 12 / months) * chartW;
+        ctx.fillText(yr + 'y', x, h - 8);
+    }
+
+    function drawLine(points, color, lineW) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineW;
+        ctx.lineJoin = 'round';
+        points.forEach((p, i) => {
+            const x = padLeft + (p.month / months) * chartW;
+            const y = padTop + chartH - ((p.rate - minRate) / (maxRate - minRate)) * chartH;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    // Draw baseline (dashed)
+    ctx.setLineDash([6, 4]);
+    drawLine(baselinePoints, baselineColor, 1.5);
+    ctx.setLineDash([]);
+
+    // Draw scenarios
+    scenarioPoints.forEach(sc => drawLine(sc.points, sc.color, 2.5));
+
+    // Title
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '12px "DM Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('Conversion Rate Under Burn Scenarios (10yr)', padLeft, padTop - 8);
+}
+
+// ===== Fee Revenue Estimator =====
+
+function initFeeEstimator() {
+    const txSlider = document.getElementById('fee-daily-txs');
+    const gasSlider = document.getElementById('fee-avg-gas');
+    if (!txSlider || !gasSlider) return;
+
+    const update = () => updateFeeEstimator();
+    txSlider.addEventListener('input', update);
+    gasSlider.addEventListener('input', update);
+    updateFeeEstimator();
+}
+
+function updateFeeEstimator() {
+    const txsLog = parseFloat(document.getElementById('fee-daily-txs').value);
+    const dailyTxs = Math.round(Math.pow(10, txsLog));
+    const avgGas = parseFloat(document.getElementById('fee-avg-gas').value);
+
+    document.getElementById('fee-daily-txs-val').textContent = formatCompact(dailyTxs);
+    document.getElementById('fee-avg-gas-val').textContent = avgGas.toFixed(3);
+
+    const dailyFees = dailyTxs * avgGas;
+    const monthlyFees = dailyFees * 30;
+    const annualFees = dailyFees * 365;
+
+    const currentPhoton = chainData.photonSupply
+        ? Number(chainData.photonSupply / 1_000_000n)
+        : 74_000_000;
+
+    const pctSupply = (annualFees / currentPhoton * 100);
+
+    document.getElementById('fee-daily').textContent = formatCompact(dailyFees) + ' ◎';
+    document.getElementById('fee-monthly').textContent = formatCompact(monthlyFees) + ' ◎';
+    document.getElementById('fee-annual').textContent = formatCompact(annualFees) + ' ◎';
+    document.getElementById('fee-pct-supply').textContent = pctSupply < 0.01
+        ? '<0.01%'
+        : pctSupply.toFixed(2) + '%';
+}
+
+// ===== Init =====
+
 document.addEventListener('DOMContentLoaded', () => {
     initScrollAnimations();
     initNavigation();
@@ -857,6 +1053,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch chain data immediately, then every 30s
     fetchChainData().then(() => {
         initSimulator();
+        initScarcityModel();
+        initFeeEstimator();
     });
     setInterval(fetchChainData, REFRESH_INTERVAL);
     
@@ -878,6 +1076,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(drawSimulator, 200);
+        resizeTimer = setTimeout(() => {
+            drawSimulator();
+            drawScarcityModel();
+        }, 200);
     });
 });
