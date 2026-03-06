@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ChainStatusBar } from "@/components/chain-status-bar";
+import { ClientProviders } from "@/components/providers/client-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,8 +16,8 @@ export const metadata: Metadata = {
     type: "website",
   },
   icons: {
-    icon: "/assets/photon-token-round.svg",
-    apple: "/assets/photon-token-round.png",
+    icon: "/assets/photon.svg",
+    apple: "/assets/photon.png",
   },
 };
 
@@ -40,11 +41,13 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="grain" />
-        <Nav />
-        <main className="pt-14 pb-12">{children}</main>
-        <Footer />
-        <ChainStatusBar />
+        <ClientProviders>
+          <div className="grain" />
+          <Nav />
+          <main className="pt-14 pb-12">{children}</main>
+          <Footer />
+          <ChainStatusBar />
+        </ClientProviders>
       </body>
     </html>
   );

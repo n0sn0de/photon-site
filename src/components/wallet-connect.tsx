@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { atomoneChainInfo, MSG_MINT_PHOTON_TYPE } from "@/lib/chain-config";
-import { LCD_BASE, ATONE_DENOM, PHOTON_DENOM, MICRO_MULTIPLIER } from "@/lib/constants";
+import { useChain } from "@cosmos-kit/react";
+import { Registry } from "@cosmjs/proto-signing";
+import { SigningStargateClient, defaultRegistryTypes } from "@cosmjs/stargate";
+import { MSG_MINT_PHOTON_TYPE } from "@/lib/chain-config";
+import { LCD_BASE, RPC_BASE, ATONE_DENOM, PHOTON_DENOM, MICRO_MULTIPLIER } from "@/lib/constants";
 import { formatNumber, formatToken } from "@/lib/format";
 
-interface WalletState {
-  connected: boolean;
-  address: string;
+interface BalanceState {
   atoneBalance: string;
   photonBalance: string;
-  walletName: string;
 }
 
 interface MintState {
@@ -20,12 +20,18 @@ interface MintState {
 }
 
 export function WalletConnect({ conversionRate }: { conversionRate: number }) {
-  const [wallet, setWallet] = useState<WalletState>({
-    connected: false,
-    address: "",
+  const {
+    connect,
+    disconnect,
+    address,
+    status,
+    wallet,
+    getOfflineSignerDirect,
+  } = useChain("atomone");
+
+  const [balances, setBalances] = useState<BalanceState>({
     atoneBalance: "0",
     photonBalance: "0",
-    walletName: "",
   });
   const [mint, setMint] = useState<MintState>({
     loading: false,
@@ -38,117 +44,97 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
       ? parseFloat(atoneInput) * conversionRate
       : null;
 
-  const fetchBalances = useCallback(async (address: string) => {
+  const fetchBalances = useCallback(async (addr: string) => {
     try {
       const res = await fetch(
-        `${LCD_BASE}/cosmos/bank/v1beta1/balances/${address}`
+        `${LCD_BASE}/cosmos/bank/v1beta1/balances/${addr}`
       );
       if (!res.ok) return;
       const data = await res.json();
-      const balances = data.balances || [];
-      const atone = balances.find(
+      const bals = data.balances || [];
+      const atone = bals.find(
         (b: { denom: string }) => b.denom === ATONE_DENOM
       );
-      const photon = balances.find(
+      const photon = bals.find(
         (b: { denom: string }) => b.denom === PHOTON_DENOM
       );
-      setWallet((prev) => ({
-        ...prev,
+      setBalances({
         atoneBalance: atone?.amount || "0",
         photonBalance: photon?.amount || "0",
-      }));
+      });
     } catch {
       // ignore
     }
   }, []);
 
-  const connectWallet = useCallback(
-    async (walletType: "keplr" | "leap") => {
-      try {
-        const provider =
-          walletType === "keplr"
-            ? (window as any).keplr
-            : (window as any).leap;
-        if (!provider) {
-          setMint((prev) => ({
-            ...prev,
-            error: `${walletType === "keplr" ? "Keplr" : "Leap"} wallet not found. Please install it.`,
-          }));
-          return;
-        }
+  // Fetch balances when connected
+  useEffect(() => {
+    if (status === "Connected" && address) {
+      fetchBalances(address);
+      const interval = setInterval(() => fetchBalances(address), 30_000);
+      return () => clearInterval(interval);
+    }
+  }, [status, address, fetchBalances]);
 
-        // Suggest chain if needed
-        try {
-          await provider.experimentalSuggestChain(atomoneChainInfo);
-        } catch {
-          // Chain may already be added
-        }
+  const handleConnect = useCallback(async () => {
+    try {
+      setMint({ loading: false, txHash: "", error: "" });
+      await connect();
+    } catch (err: any) {
+      setMint((prev) => ({
+        ...prev,
+        error: err?.message || "Failed to connect wallet",
+      }));
+    }
+  }, [connect]);
 
-        await provider.enable(atomoneChainInfo.chainId);
-        const offlineSigner = provider.getOfflineSigner(atomoneChainInfo.chainId);
-        const accounts = await offlineSigner.getAccounts();
-
-        if (accounts.length === 0) {
-          setMint((prev) => ({
-            ...prev,
-            error: "No accounts found in wallet.",
-          }));
-          return;
-        }
-
-        const address = accounts[0].address;
-        setWallet({
-          connected: true,
-          address,
-          atoneBalance: "0",
-          photonBalance: "0",
-          walletName: walletType === "keplr" ? "Keplr" : "Leap",
-        });
-        setMint({ loading: false, txHash: "", error: "" });
-
-        await fetchBalances(address);
-      } catch (err: any) {
-        setMint((prev) => ({
-          ...prev,
-          error: err?.message || "Failed to connect wallet",
-        }));
-      }
-    },
-    [fetchBalances]
-  );
-
-  const disconnect = useCallback(() => {
-    setWallet({
-      connected: false,
-      address: "",
-      atoneBalance: "0",
-      photonBalance: "0",
-      walletName: "",
-    });
-    setMint({ loading: false, txHash: "", error: "" });
-    setAtoneInput("");
-  }, []);
+  const handleDisconnect = useCallback(async () => {
+    try {
+      await disconnect();
+      setBalances({ atoneBalance: "0", photonBalance: "0" });
+      setMint({ loading: false, txHash: "", error: "" });
+      setAtoneInput("");
+    } catch {
+      // ignore
+    }
+  }, [disconnect]);
 
   const handleMint = useCallback(async () => {
-    if (!wallet.connected || !atoneInput || parseFloat(atoneInput) <= 0) return;
+    if (!address || !atoneInput || parseFloat(atoneInput) <= 0) return;
 
     setMint({ loading: true, txHash: "", error: "" });
 
     try {
-      const walletType = wallet.walletName.toLowerCase() as "keplr" | "leap";
-      const provider =
-        walletType === "keplr"
-          ? (window as any).keplr
-          : (window as any).leap;
+      const signer = getOfflineSignerDirect();
 
-      const offlineSigner = provider.getOfflineSigner(atomoneChainInfo.chainId);
-
-      // Dynamic import CosmJS
-      const { SigningStargateClient } = await import("@cosmjs/stargate");
+      // Create registry with the custom MsgMintPhoton type
+      const registry = new Registry(defaultRegistryTypes);
+      registry.register(MSG_MINT_PHOTON_TYPE, {
+        encode: (message: any, writer: any) => {
+          // Manual protobuf encoding for MsgMintPhoton
+          if (message.sender) {
+            writer.uint32(10).string(message.sender);
+          }
+          if (message.amount) {
+            writer.uint32(18).fork();
+            if (message.amount.denom) {
+              writer.uint32(10).string(message.amount.denom);
+            }
+            if (message.amount.amount) {
+              writer.uint32(18).string(message.amount.amount);
+            }
+            writer.loin();
+          }
+          return writer;
+        },
+        decode: () => ({}),
+        fromPartial: (obj: any) => obj,
+      } as any);
 
       const client = await SigningStargateClient.connectWithSigner(
-        atomoneChainInfo.rpc,
-        offlineSigner
+        RPC_BASE,
+        signer,
+        { registry }
       );
 
       const microAmount = Math.floor(
@@ -158,7 +144,7 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
       const msg = {
         typeUrl: MSG_MINT_PHOTON_TYPE,
         value: {
-          sender: wallet.address,
+          sender: address,
           amount: { denom: ATONE_DENOM, amount: microAmount },
         },
       };
@@ -166,21 +152,18 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
       // MsgMintPhoton is fee-exempt
       const fee = { amount: [], gas: "200000" };
 
-      const result = await client.signAndBroadcast(
-        wallet.address,
-        [msg],
-        fee,
-        ""
-      );
+      const result = await client.signAndBroadcast(address, [msg], fee, "");
 
       if (result.code !== 0) {
-        throw new Error(result.rawLog || `Transaction failed with code ${result.code}`);
+        throw new Error(
+          result.rawLog || `Transaction failed with code ${result.code}`
+        );
       }
 
       setMint({ loading: false, txHash: result.transactionHash, error: "" });
 
       // Refresh balances
-      setTimeout(() => fetchBalances(wallet.address), 3000);
+      setTimeout(() => fetchBalances(address), 3000);
     } catch (err: any) {
       setMint({
         loading: false,
@@ -188,16 +171,12 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
         error: err?.message || "Transaction failed",
       });
     }
-  }, [wallet, atoneInput, fetchBalances]);
+  }, [address, atoneInput, fetchBalances, getOfflineSignerDirect]);
 
-  // Refresh balances periodically
-  useEffect(() => {
-    if (!wallet.connected) return;
-    const interval = setInterval(() => fetchBalances(wallet.address), 30_000);
-    return () => clearInterval(interval);
-  }, [wallet.connected, wallet.address, fetchBalances]);
+  const isConnected = status === "Connected" && address;
+  const walletName = wallet?.prettyName || wallet?.name || "";
 
-  if (!wallet.connected) {
+  if (!isConnected) {
     return (
       <div className="bg-bg-card rounded-xl border border-border p-6 md:p-8 max-w-lg mx-auto">
         <h3 className="text-lg font-medium text-text-primary mb-2">
@@ -206,20 +185,13 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
         <p className="text-sm text-text-secondary mb-6">
           Connect your wallet to mint PHOTON by burning ATONE directly on-chain.
         </p>
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={() => connectWallet("keplr")}
-            className="w-full py-3 px-4 rounded-lg bg-accent/10 border border-accent/30 text-accent font-mono text-sm hover:bg-accent/20 transition-colors"
-          >
-            Connect Keplr
-          </button>
-          <button
-            onClick={() => connectWallet("leap")}
-            className="w-full py-3 px-4 rounded-lg bg-bg-elevated border border-border text-text-secondary font-mono text-sm hover:bg-bg-card-hover transition-colors"
-          >
-            Connect Leap
-          </button>
-        </div>
+        <button
+          onClick={handleConnect}
+          disabled={status === "Connecting"}
+          className="w-full py-3 px-4 rounded-lg bg-accent/10 border border-accent/30 text-accent font-mono text-sm hover:bg-accent/20 transition-colors disabled:opacity-50"
+        >
+          {status === "Connecting" ? "Connecting..." : "Connect Wallet"}
+        </button>
         {mint.error && (
           <p className="text-xs text-danger mt-3">{mint.error}</p>
         )}
@@ -235,32 +207,36 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-success" />
             <span className="text-xs font-mono text-text-muted">
-              {wallet.walletName}
+              {walletName}
             </span>
           </div>
           <button
-            onClick={disconnect}
+            onClick={handleDisconnect}
             className="text-xs font-mono text-text-muted hover:text-danger transition-colors"
           >
             Disconnect
           </button>
         </div>
         <div className="text-xs font-mono text-text-secondary break-all mb-4">
-          {wallet.address}
+          {address}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-bg-elevated rounded-lg p-3">
-            <div className="text-xs font-mono text-text-muted mb-1">ATONE</div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <img src="/assets/atone.svg" alt="ATONE" className="w-4 h-4" />
+              <span className="text-xs font-mono text-text-muted">ATONE</span>
+            </div>
             <div className="font-mono text-text-primary">
-              {formatToken(wallet.atoneBalance)}
+              {formatToken(balances.atoneBalance)}
             </div>
           </div>
           <div className="bg-bg-elevated rounded-lg p-3">
-            <div className="text-xs font-mono text-text-muted mb-1">
-              PHOTON
+            <div className="flex items-center gap-1.5 mb-1">
+              <img src="/assets/photon.svg" alt="PHOTON" className="w-4 h-4" />
+              <span className="text-xs font-mono text-text-muted">PHOTON</span>
             </div>
             <div className="font-mono text-accent">
-              {formatToken(wallet.photonBalance)}
+              {formatToken(balances.photonBalance)}
             </div>
           </div>
         </div>
@@ -289,7 +265,8 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
               />
               <button
                 onClick={() => {
-                  const max = parseInt(wallet.atoneBalance) / MICRO_MULTIPLIER;
+                  const max =
+                    parseInt(balances.atoneBalance) / MICRO_MULTIPLIER;
                   setAtoneInput(max.toString());
                 }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-mono text-accent hover:text-accent-bright"

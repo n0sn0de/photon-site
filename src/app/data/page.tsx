@@ -1,8 +1,10 @@
 import { Metadata } from "next";
 import { fetchAllChainData } from "@/lib/chain-api";
 import { fetchPrices } from "@/lib/coingecko";
+import { fetchPhotonPools, fetchPhotonPrice } from "@/lib/osmosis-api";
 import { Section } from "@/components/section";
 import { StatCard } from "@/components/stat-card";
+import { OsmosisPools } from "@/components/osmosis-pools";
 import {
   formatNumber,
   formatCompact,
@@ -24,9 +26,11 @@ export const metadata: Metadata = {
 };
 
 export default async function DataPage() {
-  const [chainData, prices] = await Promise.all([
+  const [chainData, prices, osmosisPools, photonOsmosisPrice] = await Promise.all([
     fetchAllChainData(),
     fetchPrices(),
+    fetchPhotonPools(),
+    fetchPhotonPrice(),
   ]);
 
   const photonSupplyMicro = chainData.supply?.photonSupply || "0";
@@ -64,6 +68,7 @@ export default async function DataPage() {
             sub={`of ${formatNumber(PHOTON_MAX_SUPPLY)} max supply`}
             progress={mintedPct}
             footer={`${formatPct(mintedPct)} minted`}
+            tokenIcon="photon"
             featured
           />
           <StatCard
@@ -71,6 +76,7 @@ export default async function DataPage() {
             title="ATONE Supply"
             value={formatNumber(atoneSupply)}
             sub="Total circulating"
+            tokenIcon="atone"
           />
           <StatCard
             icon="⚡"
@@ -124,6 +130,16 @@ export default async function DataPage() {
         photonMcap={prices.photonMcap}
         arbPct={arbPct}
       />
+
+      <Section
+        tag="Osmosis DEX"
+        title="PHOTON on Osmosis"
+        desc="PHOTON liquidity pools on Osmosis DEX. Trade, LP, or provide concentrated liquidity."
+        id="osmosis-pools"
+        dark
+      >
+        <OsmosisPools pools={osmosisPools} photonOsmosisPrice={photonOsmosisPrice} />
+      </Section>
 
       <ConversionCalculator rate={rate} />
     </>
