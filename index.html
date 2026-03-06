@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHOTON — The Fee Token of AtomOne</title>
+    <meta name="description" content="Explore Photon, the dedicated fee token of the AtomOne blockchain. Live chain data, token mechanics, burn analytics, and the dual-token model explained.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛</text></svg>">
+</head>
+<body>
+    <!-- Grain overlay -->
+    <div class="grain"></div>
+    
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-logo">
+            <span class="logo-icon">◎</span>
+            <span class="logo-text">PHOTON</span>
+        </div>
+        <div class="nav-links">
+            <a href="#mechanics">Mechanics</a>
+            <a href="#live-data">Live Data</a>
+            <a href="#dual-token">Dual Token</a>
+            <a href="#resources">Resources</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+            <div class="hero-orb hero-orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-badge">AtomOne's Fee Token</div>
+            <h1 class="hero-title">
+                <span class="hero-title-line">The light</span>
+                <span class="hero-title-line hero-title-accent">that fuels</span>
+                <span class="hero-title-line">AtomOne</span>
+            </h1>
+            <p class="hero-subtitle">
+                PHOTON is the dedicated fee token of the AtomOne blockchain — born from burning ATONE, 
+                capped at 1 billion, non-inflationary by design. A return to the original Cosmos vision 
+                of separated token roles.
+            </p>
+            <div class="hero-stats" id="hero-stats">
+                <div class="hero-stat">
+                    <span class="hero-stat-value" id="stat-supply">—</span>
+                    <span class="hero-stat-label">PHOTON Supply</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value" id="stat-rate">—</span>
+                    <span class="hero-stat-label">ATONE → PHOTON Rate</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value" id="stat-remaining">—</span>
+                    <span class="hero-stat-label">Mintable Remaining</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-scroll-hint">
+            <span>Scroll to explore</span>
+            <div class="scroll-arrow">↓</div>
+        </div>
+    </section>
+
+    <!-- Live Data Section -->
+    <section class="section section-dark" id="live-data">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Live Chain Data</span>
+                <h2 class="section-title">Real-time Photon metrics</h2>
+                <p class="section-desc">Pulled directly from AtomOne's blockchain via NosNode RPC endpoints. No intermediaries.</p>
+            </div>
+            
+            <div class="data-grid">
+                <div class="data-card data-card-featured">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">◎</span>
+                        <span class="data-card-title">PHOTON Supply</span>
+                    </div>
+                    <div class="data-card-value" id="card-photon-supply">Loading...</div>
+                    <div class="data-card-sub">of 1,000,000,000 max supply</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="photon-progress"></div>
+                    </div>
+                    <div class="data-card-footer">
+                        <span id="photon-pct">—</span> minted
+                    </div>
+                </div>
+
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">⬡</span>
+                        <span class="data-card-title">ATONE Supply</span>
+                    </div>
+                    <div class="data-card-value" id="card-atone-supply">Loading...</div>
+                    <div class="data-card-sub">Total circulating</div>
+                </div>
+
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">⚡</span>
+                        <span class="data-card-title">Conversion Rate</span>
+                    </div>
+                    <div class="data-card-value" id="card-conversion-rate">Loading...</div>
+                    <div class="data-card-sub">PHOTON per ATONE burned</div>
+                </div>
+
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">🔥</span>
+                        <span class="data-card-title">ATONE Burned</span>
+                    </div>
+                    <div class="data-card-value" id="card-atone-burned">Loading...</div>
+                    <div class="data-card-sub">Permanently removed</div>
+                </div>
+
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">🔒</span>
+                        <span class="data-card-title">Bonded ATONE</span>
+                    </div>
+                    <div class="data-card-value" id="card-bonded">Loading...</div>
+                    <div class="data-card-sub" id="card-bonded-pct">—</div>
+                </div>
+
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">🛡️</span>
+                        <span class="data-card-title">Active Validators</span>
+                    </div>
+                    <div class="data-card-value" id="card-validators">Loading...</div>
+                    <div class="data-card-sub">Securing the network</div>
+                </div>
+            </div>
+
+            <div class="data-source">
+                <span class="data-source-dot"></span>
+                Data from <a href="https://atomone-lcd.nosnode.com/swagger/" target="_blank">NosNode LCD</a> — refreshes every 30s
+                <span class="data-source-time" id="last-updated"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mechanics Section -->
+    <section class="section" id="mechanics">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Token Mechanics</span>
+                <h2 class="section-title">How Photon works</h2>
+                <p class="section-desc">A one-way burn mechanism ensures PHOTON's supply is forever tied to ATONE's sacrifice.</p>
+            </div>
+
+            <div class="mechanics-flow">
+                <div class="flow-step">
+                    <div class="flow-number">01</div>
+                    <div class="flow-content">
+                        <h3>Burn ATONE</h3>
+                        <p>Users send ATONE to the burn address via <code>MsgMintPhoton</code>. This is <strong>irreversible</strong> — the ATONE is permanently destroyed.</p>
+                    </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-number">02</div>
+                    <div class="flow-content">
+                        <h3>Conversion Rate Applied</h3>
+                        <p>The protocol calculates: <code class="formula">photon_minted = atone_burned × (max_supply − current_supply) / atone_supply</code>. The rate naturally decreases over time as ATONE inflates.</p>
+                    </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-number">03</div>
+                    <div class="flow-content">
+                        <h3>Receive PHOTON</h3>
+                        <p>Fresh PHOTON is minted and sent to your wallet. Use it for transaction fees across AtomOne, IBC transfers, and ICS payments.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mechanics-details">
+                <div class="detail-card">
+                    <h4>🔢 The Math</h4>
+                    <div class="formula-block">
+                        <code>conversion_rate = (1,000,000,000 − photon_supply) / atone_supply</code>
+                    </div>
+                    <p>As more PHOTON is minted, the rate decreases. As ATONE inflates (7-20% annually), the rate also decreases. Early burners get more PHOTON per ATONE.</p>
+                </div>
+                <div class="detail-card">
+                    <h4>🚫 No Going Back</h4>
+                    <p>PHOTON cannot be converted back to ATONE at the protocol level. This one-way gate ensures the staking token's security properties are never undermined by fee-token holders.</p>
+                </div>
+                <div class="detail-card">
+                    <h4>📊 Supply Dynamics</h4>
+                    <p>Max supply: <strong>1 billion PHOTON</strong>. This cap can never be reached because it would require burning all ATONE — impossible while validators stake. PHOTON is non-inflationary by design.</p>
+                </div>
+                <div class="detail-card">
+                    <h4>⚙️ Fee Transition</h4>
+                    <p>Currently both ATONE and PHOTON are accepted for fees (transition period). A future governance vote will make PHOTON the <strong>exclusive</strong> fee token across all shards.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dual Token Model Section -->
+    <section class="section section-dark" id="dual-token">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Architecture</span>
+                <h2 class="section-title">The dual-token thesis</h2>
+                <p class="section-desc">Separating staking from fees isn't just elegant — it's a security imperative for IBC hub chains.</p>
+            </div>
+
+            <div class="dual-grid">
+                <div class="token-card token-atone">
+                    <div class="token-card-header">
+                        <span class="token-symbol">⬡</span>
+                        <h3>ATONE</h3>
+                        <span class="token-role">Staking & Governance</span>
+                    </div>
+                    <ul class="token-props">
+                        <li><span class="prop-icon">🔐</span> Secures the network via proof-of-stake</li>
+                        <li><span class="prop-icon">🗳️</span> Direct voting only — no validator proxy</li>
+                        <li><span class="prop-icon">📈</span> 7-20% dynamic inflation targeting 2/3 bonding</li>
+                        <li><span class="prop-icon">🚫</span> Liquid staking derivatives prohibited</li>
+                        <li><span class="prop-icon">🔥</span> Can be burned → PHOTON (one-way)</li>
+                    </ul>
+                </div>
+
+                <div class="dual-vs">
+                    <div class="vs-line"></div>
+                    <span class="vs-text">separated by design</span>
+                    <div class="vs-line"></div>
+                </div>
+
+                <div class="token-card token-photon">
+                    <div class="token-card-header">
+                        <span class="token-symbol">◎</span>
+                        <h3>PHOTON</h3>
+                        <span class="token-role">Fees & Payments</span>
+                    </div>
+                    <ul class="token-props">
+                        <li><span class="prop-icon">💸</span> Exclusive fee token for all transactions</li>
+                        <li><span class="prop-icon">🌐</span> Used across IBC, ICS, and all shards</li>
+                        <li><span class="prop-icon">📉</span> Non-inflationary — capped at 1B supply</li>
+                        <li><span class="prop-icon">🏭</span> Only created by burning ATONE</li>
+                        <li><span class="prop-icon">💎</span> No dilution for holders</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="security-callout">
+                <h4>Why this matters for security</h4>
+                <p>When a single token handles both staking and fees, attackers can buy the token on exchanges, stake enough to control 2/3 of consensus, and manipulate IBC transactions to steal pegged assets. Even with slashing, the stolen assets may exceed the slashing penalty.</p>
+                <p>With separated tokens, accumulating fee tokens gives <strong>zero consensus power</strong>. Attacking requires acquiring ATONE — which is illiquid by design, has no LSD derivatives, and is locked in staking. The economic barrier to attack becomes prohibitively high.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Origin Story Section -->
+    <section class="section" id="origin">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Origin</span>
+                <h2 class="section-title">Back to the beginning</h2>
+            </div>
+
+            <div class="origin-content">
+                <div class="origin-text">
+                    <p class="origin-lead">The dual-token model wasn't invented for AtomOne. It was the original Cosmos vision from 2019 — a <a href="https://github.com/cosmos/cosmos/blob/master/Cosmos_Token_Model.pdf" target="_blank">multi-token architecture</a> that separated staking from payments.</p>
+                    
+                    <p>Over time, the Cosmos Hub drifted. ATOM became treated as a currency, a store of value, a DeFi building block. Liquid staking derivatives let people earn staking rewards without actually participating in security. Proposal #848 reduced inflation to make ATOM "more valuable" as money — undermining its purpose as a security mechanism.</p>
+                    
+                    <p>Jae Kwon and the ATOM 1.0 community said: enough. They forked Gaia to create AtomOne — not as competition, but as a return to first principles. PHOTON is the fee token that ATOM was always supposed to have.</p>
+
+                    <p>In May 2025, <a href="https://gov.atom.one/proposals/8" target="_blank">Proposal #8</a> (the v2 upgrade) introduced PHOTON with 99.97% community approval. The original vision, finally realized.</p>
+                </div>
+
+                <div class="origin-timeline">
+                    <div class="timeline-item">
+                        <span class="timeline-year">2019</span>
+                        <span class="timeline-event">Cosmos multi-token model proposed</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2023</span>
+                        <span class="timeline-event">Cosmos Hub Proposal #848 passes — inflation reduced</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">2024</span>
+                        <span class="timeline-event">AtomOne launches as Gaia fork, Jae Kwon leads</span>
+                    </div>
+                    <div class="timeline-item active">
+                        <span class="timeline-year">2025</span>
+                        <span class="timeline-event">PHOTON goes live with v2 upgrade — 99.97% approval</span>
+                    </div>
+                    <div class="timeline-item">
+                        <span class="timeline-year">Next</span>
+                        <span class="timeline-event">PHOTON becomes exclusive fee token via governance</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Conversion Calculator -->
+    <section class="section section-dark" id="calculator">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Tool</span>
+                <h2 class="section-title">Burn Calculator</h2>
+                <p class="section-desc">See how much PHOTON you'd receive for burning ATONE at the current conversion rate.</p>
+            </div>
+
+            <div class="calc-container">
+                <div class="calc-input-group">
+                    <label for="calc-atone">ATONE to burn</label>
+                    <div class="calc-input-wrap">
+                        <input type="number" id="calc-atone" placeholder="1000" min="0" step="any">
+                        <span class="calc-denom">ATONE</span>
+                    </div>
+                </div>
+                <div class="calc-arrow">⚡</div>
+                <div class="calc-output-group">
+                    <label>PHOTON you'd receive</label>
+                    <div class="calc-result" id="calc-result">—</div>
+                    <div class="calc-rate">at rate: <span id="calc-rate-display">—</span> PHOTON/ATONE</div>
+                </div>
+            </div>
+            <p class="calc-disclaimer">⚠️ This is an estimate based on the current conversion rate. The actual rate may differ at transaction time. Burning ATONE is irreversible.</p>
+        </div>
+    </section>
+
+    <!-- Resources Section -->
+    <section class="section" id="resources">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Ecosystem</span>
+                <h2 class="section-title">Go deeper</h2>
+            </div>
+
+            <div class="resources-grid">
+                <a href="https://atom.one/" target="_blank" class="resource-card">
+                    <span class="resource-icon">🌐</span>
+                    <h4>AtomOne Website</h4>
+                    <p>Official site with governance, staking, and roadmap</p>
+                </a>
+                <a href="https://docs.atom.one/" target="_blank" class="resource-card">
+                    <span class="resource-icon">📚</span>
+                    <h4>Documentation</h4>
+                    <p>Technical docs, ADRs, and module specifications</p>
+                </a>
+                <a href="https://gov.atom.one/" target="_blank" class="resource-card">
+                    <span class="resource-icon">🗳️</span>
+                    <h4>Governance dApp</h4>
+                    <p>Vote on proposals, deposit, and participate</p>
+                </a>
+                <a href="https://staking.atom.one/" target="_blank" class="resource-card">
+                    <span class="resource-icon">🔐</span>
+                    <h4>Staking dApp</h4>
+                    <p>Stake ATONE and secure the chain</p>
+                </a>
+                <a href="https://github.com/atomone-hub/atomone" target="_blank" class="resource-card">
+                    <span class="resource-icon">💻</span>
+                    <h4>GitHub</h4>
+                    <p>Source code, issues, and development</p>
+                </a>
+                <a href="https://www.mintscan.io/atomone" target="_blank" class="resource-card">
+                    <span class="resource-icon">🔍</span>
+                    <h4>Mintscan Explorer</h4>
+                    <p>Block explorer by Cosmostation</p>
+                </a>
+                <a href="https://atomone.ist/mainnet/mint" target="_blank" class="resource-card">
+                    <span class="resource-icon">🔥</span>
+                    <h4>Nodeist Mint Tool</h4>
+                    <p>Community tool for ATONE → PHOTON conversion</p>
+                </a>
+                <a href="https://t.me/youwillatone" target="_blank" class="resource-card">
+                    <span class="resource-icon">💬</span>
+                    <h4>Telegram Community</h4>
+                    <p>Join the AtomOne conversation</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-left">
+                    <span class="logo-icon">◎</span>
+                    <span class="logo-text">PHOTON</span>
+                    <p class="footer-desc">An independent community resource for the Photon fee token of AtomOne. Not affiliated with All in Bits or AtomOne governance.</p>
+                </div>
+                <div class="footer-right">
+                    <p>Chain data via <a href="https://nosnode.com" target="_blank">NosNode</a></p>
+                    <p>Built by <a href="https://github.com/n0sn0de" target="_blank">n0sn0de</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
