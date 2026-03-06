@@ -330,30 +330,53 @@
                 <p class="section-desc">A one-way burn mechanism ensures PHOTON's supply is forever tied to ATONE's sacrifice.</p>
             </div>
 
-            <div class="mechanics-flow">
-                <div class="flow-step">
-                    <div class="flow-number">01</div>
-                    <div class="flow-content">
-                        <h3>Burn ATONE</h3>
-                        <p>Users send ATONE to the burn address via <code>MsgMintPhoton</code>. This is <strong>irreversible</strong> — the ATONE is permanently destroyed.</p>
-                    </div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-number">02</div>
-                    <div class="flow-content">
-                        <h3>Conversion Rate Applied</h3>
-                        <p>The protocol calculates: <code class="formula">photon_minted = atone_burned × (max_supply − current_supply) / atone_supply</code>. The rate naturally decreases over time as ATONE inflates.</p>
-                    </div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-number">03</div>
-                    <div class="flow-content">
-                        <h3>Receive PHOTON</h3>
-                        <p>Fresh PHOTON is minted and sent to your wallet. Use it for transaction fees across AtomOne, IBC transfers, and ICS payments.</p>
-                    </div>
-                </div>
+            <div class="mint-flow-canvas" id="mint-flow-canvas" role="img" aria-label="Animated visualization of the ATONE to PHOTON burn-and-mint process">
+                <svg class="mint-flow-svg" id="mint-flow-svg" viewBox="0 0 800 220" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <radialGradient id="burn-glow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#f87171" stop-opacity="0.6"/>
+                            <stop offset="100%" stop-color="#f87171" stop-opacity="0"/>
+                        </radialGradient>
+                        <linearGradient id="atone-grad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#6b8acd"/>
+                            <stop offset="100%" stop-color="#5a77b5"/>
+                        </linearGradient>
+                        <linearGradient id="photon-grad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#d4a017"/>
+                            <stop offset="100%" stop-color="#e8b830"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- ATONE side -->
+                    <rect x="30" y="60" width="180" height="100" rx="16" fill="none" stroke="#6b8acd" stroke-width="1.5" opacity="0.4"/>
+                    <text x="120" y="98" text-anchor="middle" fill="#6b8acd" font-family="var(--font-mono)" font-size="11" opacity="0.5">ATONE</text>
+                    <text x="120" y="120" text-anchor="middle" fill="#e8e6e1" font-family="var(--font-display)" font-size="18">Burn Input</text>
+                    <text x="120" y="145" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="9">MsgMintPhoton</text>
+                    
+                    <!-- Burn zone -->
+                    <circle cx="400" cy="110" r="40" fill="none" stroke="#f87171" stroke-width="1" opacity="0.3" stroke-dasharray="4 4"/>
+                    <circle id="burn-core" cx="400" cy="110" r="8" fill="#f87171" opacity="0.4"/>
+                    <text x="400" y="175" text-anchor="middle" fill="#f87171" font-family="var(--font-mono)" font-size="10" opacity="0.5">🔥 BURN</text>
+                    
+                    <!-- PHOTON side -->
+                    <rect x="590" y="60" width="180" height="100" rx="16" fill="none" stroke="#d4a017" stroke-width="1.5" opacity="0.4"/>
+                    <text x="680" y="98" text-anchor="middle" fill="#d4a017" font-family="var(--font-mono)" font-size="11" opacity="0.5">PHOTON</text>
+                    <text x="680" y="120" text-anchor="middle" fill="#e8e6e1" font-family="var(--font-display)" font-size="18">Mint Output</text>
+                    <text x="680" y="145" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="9">Non-inflationary</text>
+                    
+                    <!-- Flow paths (dashed lines) -->
+                    <path d="M210 110 L360 110" stroke="#6b8acd" stroke-width="1" stroke-dasharray="6 4" opacity="0.2"/>
+                    <path d="M440 110 L590 110" stroke="#d4a017" stroke-width="1" stroke-dasharray="6 4" opacity="0.2"/>
+                    
+                    <!-- Animated particles group -->
+                    <g id="flow-particles"></g>
+                    
+                    <!-- Step labels -->
+                    <text x="285" y="90" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="8" opacity="0.4">01 SEND</text>
+                    <text x="400" y="58" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="8" opacity="0.4">02 CONVERT</text>
+                    <text x="515" y="90" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="8" opacity="0.4">03 MINT</text>
+                </svg>
+                <span class="replay-hint">click to replay</span>
             </div>
 
             <div class="mechanics-details">
@@ -1392,6 +1415,7 @@ atomoned tx photon mint-photon 100000000uatone \
         </div>
     </footer>
 
+    <div class="share-toast" id="share-toast">Link copied to clipboard</div>
     <script src="app.js" defer></script>
 </body>
 </html>

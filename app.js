@@ -573,17 +573,28 @@ async function fetchGovernance() {
             ` : '';
 
             return `
-                <a href="https://gov.atom.one/proposals/${id}" target="_blank" class="gov-card gov-card-link">
-                    <span class="gov-id">#${id}</span>
-                    <div class="gov-info">
-                        <div class="gov-title">${escapeHtml(title)}</div>
-                        <div class="gov-meta">#${id} · ${dateStr}${total > 0 ? ` · Yes ${yesPct.toFixed(0)}%` : ''}</div>
+                <div class="gov-card gov-card-accordion" data-proposal-id="${id}">
+                    <div class="gov-card-header">
+                        <span class="gov-id">#${id}</span>
+                        <div class="gov-info">
+                            <div class="gov-title">${escapeHtml(title)}</div>
+                            <div class="gov-meta">#${id} · ${dateStr}${total > 0 ? ` · Yes ${yesPct.toFixed(0)}%` : ''}</div>
+                        </div>
+                        <span class="gov-status ${statusClass}">${status}</span>
+                        <span class="gov-expand-icon">▶</span>
                     </div>
-                    <span class="gov-status ${statusClass}">${status}</span>
                     ${tallyBar}
-                </a>
+                    <div class="gov-detail">
+                        <div class="gov-detail-inner">
+                            <div class="gov-detail-loading">Loading proposal details...</div>
+                        </div>
+                    </div>
+                </div>
             `;
         }).join('');
+
+        // Attach accordion handlers
+        initGovAccordion();
 
     } catch (err) {
         console.error('Governance fetch failed:', err);
@@ -822,7 +833,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .scarcity-container, .fee-container, .fee-result-card, .fee-context, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .faq-item'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .scarcity-container, .fee-container, .fee-result-card, .fee-context, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-card-accordion, .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .mint-flow-canvas, .faq-item'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -936,6 +947,324 @@ function drawSparkline() {
         <path d="${pathStr}" fill="none" stroke="#d4a039" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="2" fill="#f87171"/>
     `;
+}
+
+// ===== Governance Proposal Accordion =====
+
+const govDetailCache = {};
+
+function initGovAccordion() {
+    const cards = document.querySelectorAll('.gov-card-accordion');
+    cards.forEach(card => {
+        const header = card.querySelector('.gov-card-header');
+        if (!header) return;
+        header.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isOpen = card.classList.contains('open');
+            // Close all others
+            cards.forEach(other => {
+                if (other !== card) other.classList.remove('open');
+            });
+            card.classList.toggle('open', !isOpen);
+            if (!isOpen) {
+                const proposalId = card.dataset.proposalId;
+                loadProposalDetail(card, proposalId);
+            }
+        });
+    });
+}
+
+async function loadProposalDetail(card, id) {
+    const detailInner = card.querySelector('.gov-detail-inner');
+    if (!detailInner) return;
+
+    // Use cache if available
+    if (govDetailCache[id]) {
+        renderProposalDetail(detailInner, govDetailCache[id], id);
+        return;
+    }
+
+    detailInner.innerHTML = '<div class="gov-detail-loading">Loading proposal details...</div>';
+
+    try {
+        const data = await fetchJSON(`/atomone/gov/v1/proposals/${id}`);
+        const proposal = data.proposal || data;
+        govDetailCache[id] = proposal;
+        renderProposalDetail(detailInner, proposal, id);
+    } catch (err) {
+        console.error(`Failed to load proposal #${id}:`, err);
+        detailInner.innerHTML = `<div class="gov-detail-loading">Failed to load details. <a href="https://gov.atom.one/proposals/${id}" target="_blank" style="color:var(--accent)">View on gov.atom.one →</a></div>`;
+    }
+}
+
+function renderProposalDetail(container, proposal, id) {
+    // Extract summary from messages or metadata
+    let summary = proposal.summary || '';
+    if (!summary && proposal.messages && proposal.messages.length > 0) {
+        const msg = proposal.messages[0];
+        summary = msg.content?.description || msg.description || '';
+    }
+    if (!summary && proposal.metadata) {
+        summary = proposal.metadata;
+    }
+    // Truncate long summaries
+    const maxLen = 500;
+    const truncated = summary.length > maxLen ? summary.substring(0, maxLen) + '…' : summary;
+    
+    // Voting dates
+    const startDate = proposal.voting_start_time ? new Date(proposal.voting_start_time) : null;
+    const endDate = proposal.voting_end_time ? new Date(proposal.voting_end_time) : null;
+    const dateOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+    const startStr = startDate ? startDate.toLocaleDateString('en-US', dateOpts) : '—';
+    const endStr = endDate ? endDate.toLocaleDateString('en-US', dateOpts) : '—';
+    
+    // Turnout / tally
+    const tally = proposal.final_tally_result || {};
+    const yes = parseInt(tally.yes_count || '0');
+    const no = parseInt(tally.no_count || '0');
+    const abstain = parseInt(tally.abstain_count || '0');
+    const noVeto = parseInt(tally.no_with_veto_count || '0');
+    const total = yes + no + abstain + noVeto;
+    const yesPct = total > 0 ? (yes / total * 100).toFixed(1) : '—';
+    const noPct = total > 0 ? (no / total * 100).toFixed(1) : '—';
+    const abstainPct = total > 0 ? (abstain / total * 100).toFixed(1) : '—';
+    const vetoPct = total > 0 ? (noVeto / total * 100).toFixed(1) : '—';
+
+    container.innerHTML = `
+        ${truncated ? `<div class="gov-detail-summary">${escapeHtml(truncated)}</div>` : ''}
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Voting Period</span>
+            <span class="gov-detail-stat-value">${startStr} → ${endStr}</span>
+        </div>
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Total Votes</span>
+            <span class="gov-detail-stat-value">${total > 0 ? (total / 1e6).toFixed(1) + 'M' : '—'}</span>
+        </div>
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Yes / No</span>
+            <span class="gov-detail-stat-value">${yesPct}% / ${noPct}%</span>
+        </div>
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Abstain / Veto</span>
+            <span class="gov-detail-stat-value">${abstainPct}% / ${vetoPct}%</span>
+        </div>
+        <div class="gov-detail-link">
+            <a href="https://gov.atom.one/proposals/${id}" target="_blank">View full proposal on gov.atom.one →</a>
+        </div>
+    `;
+}
+
+// ===== Social Sharing Buttons =====
+
+function initShareButtons() {
+    const sections = document.querySelectorAll('.section[id]');
+    const sectionShareTexts = {
+        'live-data': '📊 Live PHOTON chain data — real-time metrics pulled directly from AtomOne.',
+        'mechanics': '⚙️ How PHOTON works — burn ATONE, mint PHOTON. One-way, non-inflationary.',
+        'dual-token': '🛡️ Why AtomOne needs two tokens — the dual-token security model explained.',
+        'arbitrage': '💡 Mint vs Buy PHOTON — real-time arbitrage signal.',
+        'simulator': '📈 PHOTON conversion rate simulator — model the decay.',
+        'scarcity': '🔥 PHOTON scarcity model — hard cap of 1B, asymptotically unreachable.',
+        'fee-estimator': '💰 AtomOne fee revenue estimator — project PHOTON demand.',
+        'source-code': '💻 PHOTON source code explained — the actual Go code behind the mint.',
+        'constitution': '📜 AtomOne Constitution — PHOTON\'s role is constitutionally enshrined.',
+        'governance': '🗳️ AtomOne governance — live proposals shaping PHOTON\'s future.',
+        'validators': '🔒 AtomOne validator leaderboard — who secures the network.',
+        'treasury': '🏦 AtomOne community pool & treasury stats.',
+        'how-to-mint': '🚀 How to mint PHOTON — step-by-step guide.',
+        'faq': '❓ PHOTON FAQ — everything you need to know about AtomOne\'s fee token.',
+    };
+
+    sections.forEach(section => {
+        const id = section.id;
+        const header = section.querySelector('.section-header');
+        if (!header) return;
+
+        const titleEl = header.querySelector('.section-title');
+        if (!titleEl) return;
+
+        const shareText = sectionShareTexts[id] || `Check out the ${titleEl.textContent} section on PHOTON.`;
+        const shareUrl = `https://n0sn0de.github.io/photon-site/#${id}`;
+
+        const shareDiv = document.createElement('div');
+        shareDiv.className = 'section-share';
+        shareDiv.innerHTML = `
+            <button class="share-btn" data-share="twitter" title="Share on X" aria-label="Share on X">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </button>
+            <button class="share-btn" data-share="telegram" title="Share on Telegram" aria-label="Share on Telegram">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            </button>
+            <button class="share-btn" data-share="copy" title="Copy link" aria-label="Copy link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+        `;
+
+        titleEl.appendChild(shareDiv);
+
+        // Click handlers
+        shareDiv.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = btn.dataset.share;
+                if (type === 'twitter') {
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=550,height=420');
+                } else if (type === 'telegram') {
+                    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'width=550,height=420');
+                } else if (type === 'copy') {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        btn.classList.add('copied');
+                        showShareToast('Link copied to clipboard');
+                        setTimeout(() => btn.classList.remove('copied'), 2000);
+                    });
+                }
+            });
+        });
+    });
+}
+
+function showShareToast(msg) {
+    const toast = document.getElementById('share-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ===== Interactive Mint Flow Animation =====
+
+function initMintFlowAnimation() {
+    const canvas = document.getElementById('mint-flow-canvas');
+    const svg = document.getElementById('mint-flow-svg');
+    if (!canvas || !svg) return;
+
+    let animRunning = false;
+
+    function runAnimation() {
+        if (animRunning) return;
+        animRunning = true;
+        canvas.classList.add('played');
+
+        const particlesGroup = document.getElementById('flow-particles');
+        if (!particlesGroup) return;
+        particlesGroup.innerHTML = '';
+
+        const burnCore = document.getElementById('burn-core');
+
+        // Phase 1: ATONE particles flow right toward burn zone
+        const atoneParticles = 6;
+        for (let i = 0; i < atoneParticles; i++) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const startX = 210 + Math.random() * 10;
+            const startY = 105 + Math.random() * 10;
+            circle.setAttribute('cx', startX);
+            circle.setAttribute('cy', startY);
+            circle.setAttribute('r', 3 + Math.random() * 2);
+            circle.setAttribute('fill', '#6b8acd');
+            circle.setAttribute('opacity', '0');
+            particlesGroup.appendChild(circle);
+
+            const delay = i * 180;
+            const duration = 800 + Math.random() * 200;
+            const targetX = 392 + Math.random() * 16;
+            const targetY = 106 + Math.random() * 8;
+
+            setTimeout(() => {
+                animateParticle(circle, startX, startY, targetX, targetY, duration, () => {
+                    // Particle reaches burn — shrink and fade
+                    circle.setAttribute('opacity', '0');
+                    // Burn flash
+                    if (burnCore && i === Math.floor(atoneParticles / 2)) {
+                        burnCore.setAttribute('opacity', '1');
+                        burnCore.setAttribute('r', '16');
+                        setTimeout(() => {
+                            burnCore.setAttribute('opacity', '0.4');
+                            burnCore.setAttribute('r', '8');
+                        }, 400);
+                    }
+                });
+            }, delay);
+        }
+
+        // Phase 2: PHOTON particles emerge from burn zone after a delay
+        const photonDelay = atoneParticles * 180 + 500;
+        const photonParticles = 4;
+        for (let i = 0; i < photonParticles; i++) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const startX = 408 + Math.random() * 10;
+            const startY = 106 + Math.random() * 8;
+            circle.setAttribute('cx', startX);
+            circle.setAttribute('cy', startY);
+            circle.setAttribute('r', 2.5 + Math.random() * 2);
+            circle.setAttribute('fill', '#d4a017');
+            circle.setAttribute('opacity', '0');
+            particlesGroup.appendChild(circle);
+
+            const delay = photonDelay + i * 200;
+            const duration = 800 + Math.random() * 200;
+            const targetX = 590 + Math.random() * 10;
+            const targetY = 105 + Math.random() * 10;
+
+            setTimeout(() => {
+                animateParticle(circle, startX, startY, targetX, targetY, duration, () => {
+                    // Arrival glow
+                    circle.setAttribute('fill', '#e8b830');
+                    setTimeout(() => circle.setAttribute('opacity', '0'), 300);
+                });
+            }, delay);
+        }
+
+        // Reset after full animation
+        const totalDuration = photonDelay + photonParticles * 200 + 1200;
+        setTimeout(() => {
+            animRunning = false;
+        }, totalDuration);
+    }
+
+    function animateParticle(el, x1, y1, x2, y2, duration, onDone) {
+        const startTime = performance.now();
+        el.setAttribute('opacity', '0');
+
+        function tick(now) {
+            const t = Math.min((now - startTime) / duration, 1);
+            // Ease in-out cubic
+            const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            const cx = x1 + (x2 - x1) * ease;
+            const cy = y1 + (y2 - y1) * ease;
+            el.setAttribute('cx', cx);
+            el.setAttribute('cy', cy);
+
+            // Fade in/out
+            let opacity;
+            if (t < 0.15) opacity = t / 0.15;
+            else if (t > 0.85) opacity = (1 - t) / 0.15;
+            else opacity = 1;
+            el.setAttribute('opacity', Math.min(opacity, 0.9));
+
+            if (t < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                if (onDone) onDone();
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    // Trigger on scroll into view
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                runAnimation();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    observer.observe(canvas);
+
+    // Replay on click
+    canvas.addEventListener('click', () => {
+        runAnimation();
+    });
 }
 
 // ===== Init =====
@@ -1143,6 +1472,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initMobileNav();
     initFAQ();
+    initShareButtons();
+    initMintFlowAnimation();
 
     // Calculator input listener
     document.getElementById('calc-atone').addEventListener('input', updateCalculator);

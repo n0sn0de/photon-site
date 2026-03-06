@@ -1888,9 +1888,11 @@ code {
 .constitution-block,
 .constitution-context,
 .gov-card:not(.skeleton),
+.gov-card-accordion,
 .gov-active-banner,
 .val-summary-stat,
-.val-table {
+.val-table,
+.mint-flow-canvas {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.6s ease, transform 0.6s ease;
@@ -1899,9 +1901,11 @@ code {
 .constitution-block.visible,
 .constitution-context.visible,
 .gov-card.visible:not(.skeleton),
+.gov-card-accordion.visible,
 .gov-active-banner.visible,
 .val-summary-stat.visible,
-.val-table.visible {
+.val-table.visible,
+.mint-flow-canvas.visible {
     opacity: 1;
     transform: translateY(0);
 }
@@ -2961,5 +2965,288 @@ input:focus:not(:focus-visible) {
     
     .sparkline-hint {
         display: none;
+    }
+}
+
+/* ============================================
+   SESSION 7: Governance Proposal Accordion
+   ============================================ */
+
+.gov-card-accordion {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    display: block;
+}
+
+.gov-card-accordion:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(212, 160, 57, 0.1);
+}
+
+.gov-card-accordion .gov-card-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 1rem 1.5rem;
+    align-items: center;
+}
+
+.gov-card-accordion .gov-expand-icon {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    transition: transform 0.3s ease, color 0.3s ease;
+    width: 20px;
+    text-align: center;
+}
+
+.gov-card-accordion.open .gov-expand-icon {
+    transform: rotate(90deg);
+    color: var(--accent);
+}
+
+.gov-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    padding: 0 0;
+}
+
+.gov-card-accordion.open .gov-detail {
+    max-height: 600px;
+    padding: 1.2rem 0 0;
+}
+
+.gov-detail-inner {
+    border-top: 1px solid var(--border);
+    padding-top: 1.2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.gov-detail-summary {
+    grid-column: 1 / -1;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.gov-detail-summary::-webkit-scrollbar {
+    width: 4px;
+}
+
+.gov-detail-summary::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.gov-detail-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.gov-detail-stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.gov-detail-stat-value {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.gov-detail-link {
+    grid-column: 1 / -1;
+    text-align: right;
+    margin-top: 0.5rem;
+}
+
+.gov-detail-link a {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.gov-detail-link a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.gov-detail-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 1rem 0;
+}
+
+@media (max-width: 768px) {
+    .gov-card-accordion .gov-card-header {
+        grid-template-columns: 1fr auto auto;
+    }
+    .gov-card-accordion .gov-id {
+        display: none;
+    }
+    .gov-detail-inner {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ============================================
+   SESSION 7: Social Sharing Buttons
+   ============================================ */
+
+.section-share {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-left: 0.8rem;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    vertical-align: middle;
+}
+
+.section-header:hover .section-share,
+.section-share.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    font-size: 0;
+}
+
+.share-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(212, 160, 57, 0.08);
+}
+
+.share-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.share-btn.copied {
+    border-color: #4ade80;
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.share-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+}
+
+.share-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 768px) {
+    .section-share {
+        opacity: 1;
+        transform: translateX(0);
+        margin-left: 0;
+        margin-top: 0.5rem;
+        display: flex;
+    }
+}
+
+/* ============================================
+   SESSION 7: Interactive Mint Flow Animation
+   ============================================ */
+
+.mint-flow-canvas {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 4rem;
+    height: 220px;
+    cursor: pointer;
+}
+
+.mint-flow-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.mint-flow-canvas .replay-hint {
+    position: absolute;
+    bottom: -1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.mint-flow-canvas:hover .replay-hint,
+.mint-flow-canvas.played .replay-hint {
+    opacity: 0.6;
+}
+
+/* Mint flow particle animations */
+@keyframes flowRight {
+    0% { transform: translateX(0); opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { transform: translateX(var(--flow-dist, 120px)); opacity: 0; }
+}
+
+@keyframes burnPulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes mintGlow {
+    0% { r: 3; opacity: 0; }
+    40% { r: 6; opacity: 1; }
+    100% { r: 3; opacity: 0.6; }
+}
+
+@media (max-width: 768px) {
+    .mint-flow-canvas {
+        height: 180px;
     }
 }
