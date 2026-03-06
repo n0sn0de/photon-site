@@ -181,6 +181,12 @@ function updateUI() {
         document.getElementById('card-validators').textContent = activeValidators.toString();
     }
 
+    // Remove skeleton states when data loads
+    document.querySelectorAll('[data-skeleton]').forEach(el => {
+        el.removeAttribute('data-skeleton');
+        el.querySelectorAll('.skeleton-pulse').forEach(sp => sp.classList.remove('skeleton-pulse'));
+    });
+
     // Last updated
     if (lastUpdated) {
         document.getElementById('last-updated').textContent = 
@@ -501,6 +507,178 @@ function initMobileNav() {
     });
 }
 
+// ===== Governance Data =====
+
+async function fetchGovernance() {
+    try {
+        const [allRes, votingRes] = await Promise.allSettled([
+            fetchJSON('/atomone/gov/v1/proposals?pagination.limit=8&pagination.reverse=true'),
+            fetchJSON('/atomone/gov/v1/proposals?proposal_status=PROPOSAL_STATUS_VOTING_PERIOD'),
+        ]);
+
+        let proposals = [];
+        if (allRes.status === 'fulfilled') {
+            proposals = allRes.value.proposals || [];
+        }
+
+        let votingProposals = [];
+        if (votingRes.status === 'fulfilled') {
+            votingProposals = votingRes.value.proposals || [];
+        }
+
+        // Show active voting banner
+        const banner = document.getElementById('gov-active-banner');
+        if (votingProposals.length > 0) {
+            banner.style.display = 'flex';
+            document.getElementById('gov-active-text').textContent = 
+                `${votingProposals.length} proposal${votingProposals.length > 1 ? 's' : ''} in active voting — your voice matters`;
+        }
+
+        // Render proposal cards
+        const grid = document.getElementById('gov-grid');
+        if (proposals.length === 0) {
+            grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;">No proposals found.</p>';
+            return;
+        }
+
+        grid.innerHTML = proposals.map(p => {
+            const status = formatGovStatus(p.status);
+            const statusClass = getStatusClass(p.status);
+            const title = p.title || 'Untitled Proposal';
+            const id = p.id;
+            
+            // Vote end date
+            const endDate = p.voting_end_time ? new Date(p.voting_end_time) : null;
+            const dateStr = endDate ? endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            
+            // Tally bar
+            const tally = p.final_tally_result || {};
+            const yes = parseInt(tally.yes_count || '0');
+            const no = parseInt(tally.no_count || '0');
+            const abstain = parseInt(tally.abstain_count || '0');
+            const total = yes + no + abstain;
+            const yesPct = total > 0 ? (yes / total * 100) : 0;
+            const noPct = total > 0 ? (no / total * 100) : 0;
+            const abstainPct = total > 0 ? (abstain / total * 100) : 0;
+            
+            const tallyBar = total > 0 ? `
+                <div class="gov-tally-bar">
+                    <div class="gov-tally-yes" style="width:${yesPct}%" title="Yes: ${yesPct.toFixed(1)}%"></div>
+                    <div class="gov-tally-no" style="width:${noPct}%" title="No: ${noPct.toFixed(1)}%"></div>
+                    <div class="gov-tally-abstain" style="width:${abstainPct}%" title="Abstain: ${abstainPct.toFixed(1)}%"></div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="gov-card">
+                    <span class="gov-id">#${id}</span>
+                    <div class="gov-info">
+                        <div class="gov-title">${escapeHtml(title)}</div>
+                        <div class="gov-meta">#${id} · ${dateStr}${total > 0 ? ` · Yes ${yesPct.toFixed(0)}%` : ''}</div>
+                    </div>
+                    <span class="gov-status ${statusClass}">${status}</span>
+                    ${tallyBar}
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error('Governance fetch failed:', err);
+    }
+}
+
+function formatGovStatus(status) {
+    const map = {
+        'PROPOSAL_STATUS_PASSED': 'Passed',
+        'PROPOSAL_STATUS_REJECTED': 'Rejected',
+        'PROPOSAL_STATUS_VOTING_PERIOD': 'Voting',
+        'PROPOSAL_STATUS_DEPOSIT_PERIOD': 'Deposit',
+        'PROPOSAL_STATUS_FAILED': 'Failed',
+    };
+    return map[status] || status.replace('PROPOSAL_STATUS_', '');
+}
+
+function getStatusClass(status) {
+    if (status.includes('PASSED')) return 'passed';
+    if (status.includes('REJECTED') || status.includes('FAILED')) return 'rejected';
+    if (status.includes('VOTING')) return 'voting';
+    if (status.includes('DEPOSIT')) return 'deposit';
+    return '';
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ===== Validator Leaderboard =====
+
+async function fetchValidators() {
+    try {
+        const res = await fetchJSON('/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100');
+        const validators = (res.validators || [])
+            .sort((a, b) => parseInt(b.tokens) - parseInt(a.tokens))
+            .slice(0, 20);
+
+        if (validators.length === 0) return;
+
+        const totalBonded = validators.reduce((sum, v) => sum + parseInt(v.tokens), 0);
+        const allValidatorsBonded = (res.validators || []).reduce((sum, v) => sum + parseInt(v.tokens), 0);
+        const totalValidators = (res.validators || []).length;
+
+        // Calculate Nakamoto coefficient (min validators to reach 33.4%)
+        let cumulativePower = 0;
+        let nakamoto = 0;
+        for (const v of validators) {
+            cumulativePower += parseInt(v.tokens);
+            nakamoto++;
+            if (cumulativePower / allValidatorsBonded > 0.334) break;
+        }
+
+        // Update summary
+        document.getElementById('val-total-bonded').textContent = formatCompact(allValidatorsBonded / 1e6) + ' ATONE';
+        document.getElementById('val-active-count').textContent = totalValidators.toString();
+        document.getElementById('val-nakamoto').textContent = nakamoto.toString();
+
+        // Find max stake for bar scaling
+        const maxStake = parseInt(validators[0].tokens);
+
+        // Render table
+        const tbody = document.getElementById('val-table-body');
+        tbody.innerHTML = validators.map((v, i) => {
+            const rank = i + 1;
+            const moniker = v.description?.moniker || 'Unknown';
+            const website = v.description?.website || '';
+            const tokens = parseInt(v.tokens);
+            const tokensDisplay = formatNumber(tokens / 1e6, 0);
+            const powerPct = (tokens / allValidatorsBonded * 100);
+            const barWidth = (tokens / maxStake * 100);
+            const commission = (parseFloat(v.commission?.commission_rates?.rate || 0) * 100).toFixed(1);
+            const rankClass = rank <= 3 ? ' top-3' : '';
+
+            return `
+                <div class="val-row">
+                    <span class="val-rank${rankClass}">${rank}</span>
+                    <div class="val-name">
+                        <span class="val-moniker">${escapeHtml(moniker)}</span>
+                        ${website ? `<span class="val-website">${escapeHtml(website.replace(/^https?:\/\//, ''))}</span>` : ''}
+                    </div>
+                    <span class="val-stake">${tokensDisplay}</span>
+                    <div class="val-power">
+                        <div class="val-power-bar"><div class="val-power-fill" style="width:${barWidth}%"></div></div>
+                        <span class="val-power-pct">${powerPct.toFixed(2)}%</span>
+                    </div>
+                    <span class="val-comm">${commission}%</span>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error('Validator fetch failed:', err);
+    }
+}
+
 // ===== Scroll Animations =====
 
 function initScrollAnimations() {
@@ -514,7 +692,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -555,6 +733,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch price data immediately, then every 60s
     fetchPriceData();
     setInterval(fetchPriceData, PRICE_REFRESH);
+
+    // Fetch governance and validators (one-time, with 5min refresh)
+    fetchGovernance();
+    fetchValidators();
+    setInterval(fetchGovernance, 300_000);
+    setInterval(fetchValidators, 300_000);
+    
+    // Re-observe new elements after governance/validators load
+    setTimeout(() => initScrollAnimations(), 3000);
     
     // Redraw simulator on resize
     let resizeTimer;

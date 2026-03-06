@@ -41,6 +41,8 @@
             <a href="#simulator">Simulator</a>
             <a href="#dual-token">Dual Token</a>
             <a href="#source-code">Source</a>
+            <a href="#governance">Governance</a>
+            <a href="#validators">Validators</a>
             <a href="#resources">Resources</a>
         </div>
         <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
@@ -100,12 +102,12 @@
             </div>
             
             <div class="data-grid">
-                <div class="data-card data-card-featured">
+                <div class="data-card data-card-featured" data-skeleton>
                     <div class="data-card-header">
                         <span class="data-card-icon">◎</span>
                         <span class="data-card-title">PHOTON Supply</span>
                     </div>
-                    <div class="data-card-value" id="card-photon-supply">Loading...</div>
+                    <div class="data-card-value" id="card-photon-supply"><span class="skeleton-pulse">Loading...</span></div>
                     <div class="data-card-sub">of 1,000,000,000 max supply</div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="photon-progress"></div>
@@ -594,8 +596,115 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
         </div>
     </section>
 
+    <!-- Constitution Section -->
+    <section class="section" id="constitution">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Constitutional Law</span>
+                <h2 class="section-title">Written in the constitution</h2>
+                <p class="section-desc">PHOTON isn't a feature — it's a constitutional mandate. Article 3, Section 5 of the AtomOne Constitution.</p>
+            </div>
+
+            <div class="constitution-block">
+                <div class="constitution-header">
+                    <span class="constitution-article">Article 3 — Economic Model</span>
+                    <span class="constitution-section">Section 5: The PHOTON Token</span>
+                </div>
+                <blockquote class="constitution-text">
+                    <p>The PHOTON shall be the <strong>only fee token</strong> except for ATONE to PHOTON burn transactions. This applies for all transactions on the root and core shards, and all IBC and ICS payments.</p>
+                    <p>ATONE tokens may be burned to PHOTON tokens at a conversion rate set by law such that the total amount of PHOTONs mintable through burning ATONE tokens shall be <strong>capped at 1B PHOTON tokens</strong>.</p>
+                    <p>PHOTONs <strong>cannot be converted back</strong> into ATONE tokens.</p>
+                </blockquote>
+                <div class="constitution-footer">
+                    <a href="https://github.com/atomone-hub/genesis/blob/main/CONSTITUTION.md" target="_blank">Read the full constitution →</a>
+                </div>
+            </div>
+
+            <div class="constitution-context">
+                <p>AtomOne is one of the few blockchains where the fee token's role is constitutionally enshrined — not just a software parameter, but a foundational principle that requires a <strong>90%+ Constitutional Majority</strong> to amend. This is governance-hardened tokenomics.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Governance History Section -->
+    <section class="section section-dark" id="governance">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">On-Chain Governance</span>
+                <h2 class="section-title">Recent proposals</h2>
+                <p class="section-desc">Live from AtomOne governance. Every proposal shapes PHOTON's future.</p>
+            </div>
+
+            <div class="gov-active-banner" id="gov-active-banner" style="display:none;">
+                <span class="gov-active-icon">🗳️</span>
+                <span class="gov-active-text" id="gov-active-text">Active voting</span>
+            </div>
+
+            <div class="gov-grid" id="gov-grid">
+                <div class="gov-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+                <div class="gov-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+                <div class="gov-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+            </div>
+
+            <div class="data-source" style="margin-top: 2rem;">
+                <span class="data-source-dot"></span>
+                From <a href="https://gov.atom.one/" target="_blank">AtomOne Governance</a> via <code>atomone/gov/v1</code>
+            </div>
+        </div>
+    </section>
+
+    <!-- Validator Leaderboard Section -->
+    <section class="section" id="validators">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Network Security</span>
+                <h2 class="section-title">Validator leaderboard</h2>
+                <p class="section-desc">The top validators securing AtomOne. Voting power distribution matters — decentralization is a feature, not a bug.</p>
+            </div>
+
+            <div class="val-summary" id="val-summary">
+                <div class="val-summary-stat">
+                    <span class="val-summary-value" id="val-total-bonded">—</span>
+                    <span class="val-summary-label">Total Bonded</span>
+                </div>
+                <div class="val-summary-stat">
+                    <span class="val-summary-value" id="val-active-count">—</span>
+                    <span class="val-summary-label">Active Validators</span>
+                </div>
+                <div class="val-summary-stat">
+                    <span class="val-summary-value" id="val-nakamoto">—</span>
+                    <span class="val-summary-label">Nakamoto Coefficient</span>
+                </div>
+            </div>
+
+            <div class="val-table-container">
+                <div class="val-table" id="val-table">
+                    <div class="val-table-header">
+                        <span class="val-col-rank">#</span>
+                        <span class="val-col-name">Validator</span>
+                        <span class="val-col-stake">Bonded ATONE</span>
+                        <span class="val-col-power">Voting Power</span>
+                        <span class="val-col-comm">Commission</span>
+                    </div>
+                    <div class="val-table-body" id="val-table-body">
+                        <div class="val-row skeleton"><div class="skeleton-line w100"></div></div>
+                        <div class="val-row skeleton"><div class="skeleton-line w100"></div></div>
+                        <div class="val-row skeleton"><div class="skeleton-line w100"></div></div>
+                        <div class="val-row skeleton"><div class="skeleton-line w100"></div></div>
+                        <div class="val-row skeleton"><div class="skeleton-line w100"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-source" style="margin-top: 2rem;">
+                <span class="data-source-dot"></span>
+                Live from <a href="https://atomone-lcd.nosnode.com/swagger/" target="_blank">NosNode LCD</a> — top 20 by voting power
+            </div>
+        </div>
+    </section>
+
     <!-- Resources Section -->
-    <section class="section" id="resources">
+    <section class="section section-dark" id="resources">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Ecosystem</span>
