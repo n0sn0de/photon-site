@@ -17,6 +17,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="PHOTON — The Fee Token of AtomOne">
     <meta name="twitter:description" content="Live chain data, arbitrage signals, and the dual-token thesis explained.">
+    <meta name="twitter:image" content="https://n0sn0de.github.io/photon-site/og-image.png">
     
     <!-- Resource hints -->
     <link rel="dns-prefetch" href="https://atomone-lcd.nosnode.com">
@@ -187,6 +188,10 @@
             <a href="#faq">FAQ</a>
             <a href="#resources">Resources</a>
         </div>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">
+            <svg class="theme-icon theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="theme-icon theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
         <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
             <span></span><span></span><span></span>
         </button>
@@ -217,9 +222,12 @@
                     <span class="hero-stat-label">PHOTON Supply</span>
                 </div>
                 <div class="hero-stat-divider"></div>
-                <div class="hero-stat">
-                    <span class="hero-stat-value" id="stat-rate">—</span>
-                    <span class="hero-stat-label">ATONE → PHOTON Rate</span>
+                <div class="hero-stat hero-stat-with-sparkline">
+                    <div class="hero-stat-rate-row">
+                        <span class="hero-stat-value" id="stat-rate">—</span>
+                        <svg id="rate-sparkline" class="rate-sparkline" width="60" height="24" viewBox="0 0 60 24" fill="none"></svg>
+                    </div>
+                    <span class="hero-stat-label">ATONE → PHOTON Rate <span class="sparkline-hint">12mo trend ↘</span></span>
                 </div>
                 <div class="hero-stat-divider"></div>
                 <div class="hero-stat">

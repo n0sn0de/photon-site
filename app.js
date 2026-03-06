@@ -397,7 +397,8 @@ function drawSimulator() {
     const minRate = Math.min(...points.map(p => p.rate)) * 0.95;
     
     // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    const simColors = getChartColors();
+    ctx.strokeStyle = simColors.gridLine;
     ctx.lineWidth = 1;
     const gridLines = 5;
     for (let i = 0; i <= gridLines; i++) {
@@ -409,14 +410,14 @@ function drawSimulator() {
         
         // Y labels
         const val = maxRate - (maxRate - minRate) * (i / gridLines);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillStyle = simColors.labelColor;
         ctx.font = '11px "DM Mono", monospace';
         ctx.textAlign = 'right';
         ctx.fillText(val.toFixed(2), padLeft - 8, y + 4);
     }
     
     // X labels
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillStyle = simColors.labelColor;
     ctx.textAlign = 'center';
     const yearMarks = Math.min(years, 10);
     for (let i = 0; i <= yearMarks; i++) {
@@ -481,7 +482,7 @@ function drawSimulator() {
     ctx.fillText('then: ' + finalRate.toFixed(2), endX - 10, endY - 8);
     
     // Title
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = simColors.titleColor;
     ctx.font = '12px "DM Mono", monospace';
     ctx.textAlign = 'left';
     ctx.fillText('PHOTON/ATONE Conversion Rate Over Time', padLeft, padTop - 5);
@@ -843,6 +844,100 @@ function initNavigation() {
     });
 }
 
+// ===== Light/Dark Mode =====
+
+function initThemeToggle() {
+    const toggle = document.getElementById('theme-toggle');
+    if (!toggle) return;
+    
+    // Check saved preference, then system preference
+    const saved = localStorage.getItem('photon-theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+    
+    toggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('photon-theme', next);
+        
+        // Redraw canvases with appropriate colors
+        drawSimulator();
+        drawScarcityModel();
+    });
+    
+    // Listen for system preference changes (only if no manual override)
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('photon-theme')) {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+            drawSimulator();
+            drawScarcityModel();
+        }
+    });
+}
+
+function getChartColors() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    return {
+        gridLine: isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.06)',
+        labelColor: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.3)',
+        titleColor: isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.5)',
+        baselineColor: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
+    };
+}
+
+// ===== Rate Decay Sparkline =====
+
+function drawSparkline() {
+    const svg = document.getElementById('rate-sparkline');
+    if (!svg || chainData.conversionRate === null || chainData.atoneSupply === null) return;
+    
+    const currentRate = chainData.conversionRate;
+    const currentAtone = Number(chainData.atoneSupply / 1_000_000n);
+    const photonWhole = chainData.photonSupply !== null ? Number(chainData.photonSupply / 1_000_000n) : 0;
+    
+    // Project 12 months with ~10% inflation (midpoint estimate)
+    const monthlyInflation = Math.pow(1.10, 1/12) - 1;
+    const points = [];
+    let projAtone = currentAtone;
+    
+    for (let m = 0; m <= 12; m++) {
+        const rate = (PHOTON_MAX_SUPPLY - photonWhole) / projAtone;
+        points.push(rate);
+        projAtone *= (1 + monthlyInflation);
+    }
+    
+    const maxRate = Math.max(...points);
+    const minRate = Math.min(...points);
+    const range = maxRate - minRate || 0.001;
+    const w = 60, h = 24, pad = 2;
+    
+    const coords = points.map((rate, i) => {
+        const x = pad + (i / 12) * (w - pad * 2);
+        const y = pad + (1 - (rate - minRate) / range) * (h - pad * 2);
+        return { x, y };
+    });
+    
+    const pathStr = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c.x.toFixed(1) + ',' + c.y.toFixed(1)).join(' ');
+    const fillPath = pathStr + ` L${(w - pad).toFixed(1)},${(h - pad).toFixed(1)} L${pad.toFixed(1)},${(h - pad).toFixed(1)} Z`;
+    const last = coords[coords.length - 1];
+    
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#d4a039" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#d4a039" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <path d="${fillPath}" fill="url(#sparkline-grad)"/>
+        <path d="${pathStr}" fill="none" stroke="#d4a039" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="2" fill="#f87171"/>
+    `;
+}
+
 // ===== Init =====
 
 // ===== Scarcity Model =====
@@ -877,7 +972,8 @@ function drawScarcityModel() {
         { label: '20%', pct: 0.20, color: '#d4a853' },
         { label: '50%', pct: 0.50, color: '#f87171' },
     ];
-    const baselineColor = 'rgba(255,255,255,0.2)';
+    const chartColors = getChartColors();
+    const baselineColor = chartColors.baselineColor;
 
     // Baseline (no burn, just inflation)
     const baselinePoints = [];
@@ -948,7 +1044,7 @@ function drawScarcityModel() {
     const minRate = Math.min(...allRates) * 0.95;
 
     // Grid
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeStyle = chartColors.gridLine;
     ctx.lineWidth = 1;
     const gridN = 5;
     for (let i = 0; i <= gridN; i++) {
@@ -958,14 +1054,14 @@ function drawScarcityModel() {
         ctx.lineTo(padLeft + chartW, y);
         ctx.stroke();
         const val = maxRate - (maxRate - minRate) * (i / gridN);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillStyle = chartColors.labelColor;
         ctx.font = '11px "DM Mono", monospace';
         ctx.textAlign = 'right';
         ctx.fillText(val.toFixed(2), padLeft - 8, y + 4);
     }
 
     // X labels
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillStyle = chartColors.labelColor;
     ctx.textAlign = 'center';
     for (let yr = 0; yr <= years; yr += 2) {
         const x = padLeft + (yr * 12 / months) * chartW;
@@ -994,7 +1090,7 @@ function drawScarcityModel() {
     scenarioPoints.forEach(sc => drawLine(sc.points, sc.color, 2.5));
 
     // Title
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = chartColors.titleColor;
     ctx.font = '12px "DM Mono", monospace';
     ctx.textAlign = 'left';
     ctx.fillText('Conversion Rate Under Burn Scenarios (10yr)', padLeft, padTop - 8);
@@ -1042,6 +1138,7 @@ function updateFeeEstimator() {
 // ===== Init =====
 
 document.addEventListener('DOMContentLoaded', () => {
+    initThemeToggle();
     initScrollAnimations();
     initNavigation();
     initMobileNav();
@@ -1055,6 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initSimulator();
         initScarcityModel();
         initFeeEstimator();
+        drawSparkline();
     });
     setInterval(fetchChainData, REFRESH_INTERVAL);
     
