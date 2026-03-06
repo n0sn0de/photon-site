@@ -1,15 +1,15 @@
 "use client";
 
 import { ChainProvider } from "@cosmos-kit/react";
-import { chains, assetLists } from "chain-registry";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import type { MainWalletBase } from "@cosmos-kit/core";
 import { atomoneChain, atomoneAssets } from "@/lib/atomone-chain";
 import "@interchain-ui/react/styles";
 
-const allChains = [...chains, atomoneChain] as any[];
-const allAssets = [...assetLists, atomoneAssets] as any[];
+// Only include AtomOne — no need to load 100+ chains from chain-registry
+const allChains = [atomoneChain] as any[];
+const allAssets = [atomoneAssets] as any[];
 
 const wallets = [...keplrWallets, ...leapWallets] as MainWalletBase[];
 
