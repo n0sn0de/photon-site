@@ -397,7 +397,8 @@ function drawSimulator() {
     const minRate = Math.min(...points.map(p => p.rate)) * 0.95;
     
     // Grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    const simColors = getChartColors();
+    ctx.strokeStyle = simColors.gridLine;
     ctx.lineWidth = 1;
     const gridLines = 5;
     for (let i = 0; i <= gridLines; i++) {
@@ -409,14 +410,14 @@ function drawSimulator() {
         
         // Y labels
         const val = maxRate - (maxRate - minRate) * (i / gridLines);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillStyle = simColors.labelColor;
         ctx.font = '11px "DM Mono", monospace';
         ctx.textAlign = 'right';
         ctx.fillText(val.toFixed(2), padLeft - 8, y + 4);
     }
     
     // X labels
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillStyle = simColors.labelColor;
     ctx.textAlign = 'center';
     const yearMarks = Math.min(years, 10);
     for (let i = 0; i <= yearMarks; i++) {
@@ -481,7 +482,7 @@ function drawSimulator() {
     ctx.fillText('then: ' + finalRate.toFixed(2), endX - 10, endY - 8);
     
     // Title
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = simColors.titleColor;
     ctx.font = '12px "DM Mono", monospace';
     ctx.textAlign = 'left';
     ctx.fillText('PHOTON/ATONE Conversion Rate Over Time', padLeft, padTop - 5);
@@ -572,17 +573,28 @@ async function fetchGovernance() {
             ` : '';
 
             return `
-                <a href="https://gov.atom.one/proposals/${id}" target="_blank" class="gov-card gov-card-link">
-                    <span class="gov-id">#${id}</span>
-                    <div class="gov-info">
-                        <div class="gov-title">${escapeHtml(title)}</div>
-                        <div class="gov-meta">#${id} · ${dateStr}${total > 0 ? ` · Yes ${yesPct.toFixed(0)}%` : ''}</div>
+                <div class="gov-card gov-card-accordion" data-proposal-id="${id}">
+                    <div class="gov-card-header">
+                        <span class="gov-id">#${id}</span>
+                        <div class="gov-info">
+                            <div class="gov-title">${escapeHtml(title)}</div>
+                            <div class="gov-meta">#${id} · ${dateStr}${total > 0 ? ` · Yes ${yesPct.toFixed(0)}%` : ''}</div>
+                        </div>
+                        <span class="gov-status ${statusClass}">${status}</span>
+                        <span class="gov-expand-icon">▶</span>
                     </div>
-                    <span class="gov-status ${statusClass}">${status}</span>
                     ${tallyBar}
-                </a>
+                    <div class="gov-detail">
+                        <div class="gov-detail-inner">
+                            <div class="gov-detail-loading">Loading proposal details...</div>
+                        </div>
+                    </div>
+                </div>
             `;
         }).join('');
+
+        // Attach accordion handlers
+        initGovAccordion();
 
     } catch (err) {
         console.error('Governance fetch failed:', err);
@@ -778,7 +790,7 @@ function initFAQ() {
 
 // ===== Lazy-load API sections =====
 
-const lazyLoaded = { governance: false, validators: false, treasury: false };
+const lazyLoaded = { governance: false, validators: false, treasury: false, priceHistory: false, ibcConnections: false };
 
 function initLazyLoad() {
     const lazyObserver = new IntersectionObserver((entries) => {
@@ -797,12 +809,18 @@ function initLazyLoad() {
                 lazyLoaded.treasury = true;
                 fetchTreasury();
                 setInterval(fetchTreasury, 300_000);
+            } else if (id === 'price-history' && !lazyLoaded.priceHistory) {
+                lazyLoaded.priceHistory = true;
+                initPriceChart();
+            } else if (id === 'ibc-connections' && !lazyLoaded.ibcConnections) {
+                lazyLoaded.ibcConnections = true;
+                fetchIBCConnections();
             }
             lazyObserver.unobserve(entry.target);
         });
-    }, { rootMargin: '200px 0px' }); // pre-fetch 200px before visible
+    }, { rootMargin: '200px 0px' });
 
-    ['governance', 'validators', 'treasury'].forEach(id => {
+    ['governance', 'validators', 'treasury', 'price-history', 'ibc-connections'].forEach(id => {
         const el = document.getElementById(id);
         if (el) lazyObserver.observe(el);
     });
@@ -821,7 +839,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .faq-item'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .scarcity-container, .fee-container, .fee-result-card, .fee-context, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-card-accordion, .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .mint-flow-canvas, .faq-item, .price-chart-container, .ibc-card:not(.skeleton), .ibc-grid, .ibc-summary'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -843,13 +861,1080 @@ function initNavigation() {
     });
 }
 
+// ===== Light/Dark Mode =====
+
+function initThemeToggle() {
+    const toggle = document.getElementById('theme-toggle');
+    if (!toggle) return;
+    
+    // Check saved preference, then system preference
+    const saved = localStorage.getItem('photon-theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+    
+    toggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('photon-theme', next);
+        
+        // Redraw canvases with appropriate colors
+        drawSimulator();
+        drawScarcityModel();
+        if (typeof drawPriceChart === 'function' && priceChartData.photon.length) drawPriceChart();
+    });
+    
+    // Listen for system preference changes (only if no manual override)
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('photon-theme')) {
+            document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
+            drawSimulator();
+            drawScarcityModel();
+            if (typeof drawPriceChart === 'function' && priceChartData.photon.length) drawPriceChart();
+        }
+    });
+}
+
+function getChartColors() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    return {
+        gridLine: isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.06)',
+        labelColor: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.3)',
+        titleColor: isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.5)',
+        baselineColor: isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.2)',
+    };
+}
+
+// ===== Rate Decay Sparkline =====
+
+function drawSparkline() {
+    const svg = document.getElementById('rate-sparkline');
+    if (!svg || chainData.conversionRate === null || chainData.atoneSupply === null) return;
+    
+    const currentRate = chainData.conversionRate;
+    const currentAtone = Number(chainData.atoneSupply / 1_000_000n);
+    const photonWhole = chainData.photonSupply !== null ? Number(chainData.photonSupply / 1_000_000n) : 0;
+    
+    // Project 12 months with ~10% inflation (midpoint estimate)
+    const monthlyInflation = Math.pow(1.10, 1/12) - 1;
+    const points = [];
+    let projAtone = currentAtone;
+    
+    for (let m = 0; m <= 12; m++) {
+        const rate = (PHOTON_MAX_SUPPLY - photonWhole) / projAtone;
+        points.push(rate);
+        projAtone *= (1 + monthlyInflation);
+    }
+    
+    const maxRate = Math.max(...points);
+    const minRate = Math.min(...points);
+    const range = maxRate - minRate || 0.001;
+    const w = 60, h = 24, pad = 2;
+    
+    const coords = points.map((rate, i) => {
+        const x = pad + (i / 12) * (w - pad * 2);
+        const y = pad + (1 - (rate - minRate) / range) * (h - pad * 2);
+        return { x, y };
+    });
+    
+    const pathStr = coords.map((c, i) => (i === 0 ? 'M' : 'L') + c.x.toFixed(1) + ',' + c.y.toFixed(1)).join(' ');
+    const fillPath = pathStr + ` L${(w - pad).toFixed(1)},${(h - pad).toFixed(1)} L${pad.toFixed(1)},${(h - pad).toFixed(1)} Z`;
+    const last = coords[coords.length - 1];
+    
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#d4a039" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#d4a039" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <path d="${fillPath}" fill="url(#sparkline-grad)"/>
+        <path d="${pathStr}" fill="none" stroke="#d4a039" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${last.x.toFixed(1)}" cy="${last.y.toFixed(1)}" r="2" fill="#f87171"/>
+    `;
+}
+
+// ===== Governance Proposal Accordion =====
+
+const govDetailCache = {};
+
+function initGovAccordion() {
+    const cards = document.querySelectorAll('.gov-card-accordion');
+    cards.forEach(card => {
+        const header = card.querySelector('.gov-card-header');
+        if (!header) return;
+        header.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isOpen = card.classList.contains('open');
+            // Close all others
+            cards.forEach(other => {
+                if (other !== card) other.classList.remove('open');
+            });
+            card.classList.toggle('open', !isOpen);
+            if (!isOpen) {
+                const proposalId = card.dataset.proposalId;
+                loadProposalDetail(card, proposalId);
+            }
+        });
+    });
+}
+
+async function loadProposalDetail(card, id) {
+    const detailInner = card.querySelector('.gov-detail-inner');
+    if (!detailInner) return;
+
+    // Use cache if available
+    if (govDetailCache[id]) {
+        renderProposalDetail(detailInner, govDetailCache[id], id);
+        return;
+    }
+
+    detailInner.innerHTML = '<div class="gov-detail-loading">Loading proposal details...</div>';
+
+    try {
+        const data = await fetchJSON(`/atomone/gov/v1/proposals/${id}`);
+        const proposal = data.proposal || data;
+        govDetailCache[id] = proposal;
+        renderProposalDetail(detailInner, proposal, id);
+    } catch (err) {
+        console.error(`Failed to load proposal #${id}:`, err);
+        detailInner.innerHTML = `<div class="gov-detail-loading">Failed to load details. <a href="https://gov.atom.one/proposals/${id}" target="_blank" style="color:var(--accent)">View on gov.atom.one →</a></div>`;
+    }
+}
+
+function renderProposalDetail(container, proposal, id) {
+    // Extract summary from messages or metadata
+    let summary = proposal.summary || '';
+    if (!summary && proposal.messages && proposal.messages.length > 0) {
+        const msg = proposal.messages[0];
+        summary = msg.content?.description || msg.description || '';
+    }
+    if (!summary && proposal.metadata) {
+        summary = proposal.metadata;
+    }
+    // Truncate long summaries
+    const maxLen = 500;
+    const truncated = summary.length > maxLen ? summary.substring(0, maxLen) + '…' : summary;
+    
+    // Voting dates
+    const startDate = proposal.voting_start_time ? new Date(proposal.voting_start_time) : null;
+    const endDate = proposal.voting_end_time ? new Date(proposal.voting_end_time) : null;
+    const dateOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+    const startStr = startDate ? startDate.toLocaleDateString('en-US', dateOpts) : '—';
+    const endStr = endDate ? endDate.toLocaleDateString('en-US', dateOpts) : '—';
+    
+    // Turnout / tally
+    const tally = proposal.final_tally_result || {};
+    const yes = parseInt(tally.yes_count || '0');
+    const no = parseInt(tally.no_count || '0');
+    const abstain = parseInt(tally.abstain_count || '0');
+    const noVeto = parseInt(tally.no_with_veto_count || '0');
+    const total = yes + no + abstain + noVeto;
+    const yesPct = total > 0 ? (yes / total * 100).toFixed(1) : '—';
+    const noPct = total > 0 ? (no / total * 100).toFixed(1) : '—';
+    const abstainPct = total > 0 ? (abstain / total * 100).toFixed(1) : '—';
+    const vetoPct = total > 0 ? (noVeto / total * 100).toFixed(1) : '—';
+
+    container.innerHTML = `
+        ${truncated ? `<div class="gov-detail-summary">${escapeHtml(truncated)}</div>` : ''}
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Voting Period</span>
+            <span class="gov-detail-stat-value">${startStr} → ${endStr}</span>
+        </div>
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Total Votes</span>
+            <span class="gov-detail-stat-value">${total > 0 ? (total / 1e6).toFixed(1) + 'M' : '—'}</span>
+        </div>
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Yes / No</span>
+            <span class="gov-detail-stat-value">${yesPct}% / ${noPct}%</span>
+        </div>
+        <div class="gov-detail-stat">
+            <span class="gov-detail-stat-label">Abstain / Veto</span>
+            <span class="gov-detail-stat-value">${abstainPct}% / ${vetoPct}%</span>
+        </div>
+        <div class="gov-detail-link">
+            <a href="https://gov.atom.one/proposals/${id}" target="_blank">View full proposal on gov.atom.one →</a>
+        </div>
+    `;
+}
+
+// ===== Social Sharing Buttons =====
+
+function initShareButtons() {
+    const sections = document.querySelectorAll('.section[id]');
+    const sectionShareTexts = {
+        'live-data': '📊 Live PHOTON chain data — real-time metrics pulled directly from AtomOne.',
+        'mechanics': '⚙️ How PHOTON works — burn ATONE, mint PHOTON. One-way, non-inflationary.',
+        'dual-token': '🛡️ Why AtomOne needs two tokens — the dual-token security model explained.',
+        'arbitrage': '💡 Mint vs Buy PHOTON — real-time arbitrage signal.',
+        'simulator': '📈 PHOTON conversion rate simulator — model the decay.',
+        'scarcity': '🔥 PHOTON scarcity model — hard cap of 1B, asymptotically unreachable.',
+        'fee-estimator': '💰 AtomOne fee revenue estimator — project PHOTON demand.',
+        'source-code': '💻 PHOTON source code explained — the actual Go code behind the mint.',
+        'constitution': '📜 AtomOne Constitution — PHOTON\'s role is constitutionally enshrined.',
+        'governance': '🗳️ AtomOne governance — live proposals shaping PHOTON\'s future.',
+        'validators': '🔒 AtomOne validator leaderboard — who secures the network.',
+        'treasury': '🏦 AtomOne community pool & treasury stats.',
+        'how-to-mint': '🚀 How to mint PHOTON — step-by-step guide.',
+        'faq': '❓ PHOTON FAQ — everything you need to know about AtomOne\'s fee token.',
+    };
+
+    sections.forEach(section => {
+        const id = section.id;
+        const header = section.querySelector('.section-header');
+        if (!header) return;
+
+        const titleEl = header.querySelector('.section-title');
+        if (!titleEl) return;
+
+        const shareText = sectionShareTexts[id] || `Check out the ${titleEl.textContent} section on PHOTON.`;
+        const shareUrl = `https://n0sn0de.github.io/photon-site/#${id}`;
+
+        const shareDiv = document.createElement('div');
+        shareDiv.className = 'section-share';
+        shareDiv.innerHTML = `
+            <button class="share-btn" data-share="twitter" title="Share on X" aria-label="Share on X">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </button>
+            <button class="share-btn" data-share="telegram" title="Share on Telegram" aria-label="Share on Telegram">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            </button>
+            <button class="share-btn" data-share="copy" title="Copy link" aria-label="Copy link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+        `;
+
+        titleEl.appendChild(shareDiv);
+
+        // Click handlers
+        shareDiv.querySelectorAll('.share-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = btn.dataset.share;
+                if (type === 'twitter') {
+                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'width=550,height=420');
+                } else if (type === 'telegram') {
+                    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank', 'width=550,height=420');
+                } else if (type === 'copy') {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        btn.classList.add('copied');
+                        showShareToast('Link copied to clipboard');
+                        setTimeout(() => btn.classList.remove('copied'), 2000);
+                    });
+                }
+            });
+        });
+    });
+}
+
+function showShareToast(msg) {
+    const toast = document.getElementById('share-toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ===== Interactive Mint Flow Animation =====
+
+function initMintFlowAnimation() {
+    const canvas = document.getElementById('mint-flow-canvas');
+    const svg = document.getElementById('mint-flow-svg');
+    if (!canvas || !svg) return;
+
+    let animRunning = false;
+
+    function runAnimation() {
+        if (animRunning) return;
+        animRunning = true;
+        canvas.classList.add('played');
+
+        const particlesGroup = document.getElementById('flow-particles');
+        if (!particlesGroup) return;
+        particlesGroup.innerHTML = '';
+
+        const burnCore = document.getElementById('burn-core');
+
+        // Phase 1: ATONE particles flow right toward burn zone
+        const atoneParticles = 6;
+        for (let i = 0; i < atoneParticles; i++) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const startX = 210 + Math.random() * 10;
+            const startY = 105 + Math.random() * 10;
+            circle.setAttribute('cx', startX);
+            circle.setAttribute('cy', startY);
+            circle.setAttribute('r', 3 + Math.random() * 2);
+            circle.setAttribute('fill', '#6b8acd');
+            circle.setAttribute('opacity', '0');
+            particlesGroup.appendChild(circle);
+
+            const delay = i * 180;
+            const duration = 800 + Math.random() * 200;
+            const targetX = 392 + Math.random() * 16;
+            const targetY = 106 + Math.random() * 8;
+
+            setTimeout(() => {
+                animateParticle(circle, startX, startY, targetX, targetY, duration, () => {
+                    // Particle reaches burn — shrink and fade
+                    circle.setAttribute('opacity', '0');
+                    // Burn flash
+                    if (burnCore && i === Math.floor(atoneParticles / 2)) {
+                        burnCore.setAttribute('opacity', '1');
+                        burnCore.setAttribute('r', '16');
+                        setTimeout(() => {
+                            burnCore.setAttribute('opacity', '0.4');
+                            burnCore.setAttribute('r', '8');
+                        }, 400);
+                    }
+                });
+            }, delay);
+        }
+
+        // Phase 2: PHOTON particles emerge from burn zone after a delay
+        const photonDelay = atoneParticles * 180 + 500;
+        const photonParticles = 4;
+        for (let i = 0; i < photonParticles; i++) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const startX = 408 + Math.random() * 10;
+            const startY = 106 + Math.random() * 8;
+            circle.setAttribute('cx', startX);
+            circle.setAttribute('cy', startY);
+            circle.setAttribute('r', 2.5 + Math.random() * 2);
+            circle.setAttribute('fill', '#d4a017');
+            circle.setAttribute('opacity', '0');
+            particlesGroup.appendChild(circle);
+
+            const delay = photonDelay + i * 200;
+            const duration = 800 + Math.random() * 200;
+            const targetX = 590 + Math.random() * 10;
+            const targetY = 105 + Math.random() * 10;
+
+            setTimeout(() => {
+                animateParticle(circle, startX, startY, targetX, targetY, duration, () => {
+                    // Arrival glow
+                    circle.setAttribute('fill', '#e8b830');
+                    setTimeout(() => circle.setAttribute('opacity', '0'), 300);
+                });
+            }, delay);
+        }
+
+        // Reset after full animation
+        const totalDuration = photonDelay + photonParticles * 200 + 1200;
+        setTimeout(() => {
+            animRunning = false;
+        }, totalDuration);
+    }
+
+    function animateParticle(el, x1, y1, x2, y2, duration, onDone) {
+        const startTime = performance.now();
+        el.setAttribute('opacity', '0');
+
+        function tick(now) {
+            const t = Math.min((now - startTime) / duration, 1);
+            // Ease in-out cubic
+            const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            const cx = x1 + (x2 - x1) * ease;
+            const cy = y1 + (y2 - y1) * ease;
+            el.setAttribute('cx', cx);
+            el.setAttribute('cy', cy);
+
+            // Fade in/out
+            let opacity;
+            if (t < 0.15) opacity = t / 0.15;
+            else if (t > 0.85) opacity = (1 - t) / 0.15;
+            else opacity = 1;
+            el.setAttribute('opacity', Math.min(opacity, 0.9));
+
+            if (t < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                if (onDone) onDone();
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    // Trigger on scroll into view
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                runAnimation();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    observer.observe(canvas);
+
+    // Replay on click
+    canvas.addEventListener('click', () => {
+        runAnimation();
+    });
+}
+
+// ===== Init =====
+
+// ===== Scarcity Model =====
+
+function initScarcityModel() {
+    const inflSlider = document.getElementById('scarcity-inflation');
+    if (!inflSlider) return;
+
+    const update = () => drawScarcityModel();
+    inflSlider.addEventListener('input', update);
+    drawScarcityModel();
+}
+
+function drawScarcityModel() {
+    const inflation = parseFloat(document.getElementById('scarcity-inflation').value) / 100;
+    document.getElementById('scarcity-inflation-val').textContent = (inflation * 100).toFixed(1) + '%';
+
+    const currentAtone = chainData.atoneSupply
+        ? Number(chainData.atoneSupply / 1_000_000n)
+        : 136_731_102;
+    const currentPhoton = chainData.photonSupply
+        ? Number(chainData.photonSupply / 1_000_000n)
+        : 74_000_000;
+
+    const years = 10;
+    const months = years * 12;
+    const monthlyInfl = Math.pow(1 + inflation, 1/12) - 1;
+
+    // Scenarios: % of initial ATONE supply burned over 10 years (spread linearly)
+    const burnScenarios = [
+        { label: '5%', pct: 0.05, color: '#4ade80' },
+        { label: '20%', pct: 0.20, color: '#d4a853' },
+        { label: '50%', pct: 0.50, color: '#f87171' },
+    ];
+    const chartColors = getChartColors();
+    const baselineColor = chartColors.baselineColor;
+
+    // Baseline (no burn, just inflation)
+    const baselinePoints = [];
+    let bAtone = currentAtone;
+    for (let m = 0; m <= months; m++) {
+        const rate = (PHOTON_MAX_SUPPLY - currentPhoton) / bAtone;
+        baselinePoints.push({ month: m, rate });
+        bAtone *= (1 + monthlyInfl);
+    }
+
+    // Each burn scenario
+    const scenarioPoints = burnScenarios.map(sc => {
+        const points = [];
+        let atone = currentAtone;
+        let photon = currentPhoton;
+        const totalBurn = currentAtone * sc.pct;
+        const monthlyBurn = totalBurn / months;
+        for (let m = 0; m <= months; m++) {
+            const rate = (PHOTON_MAX_SUPPLY - photon) / atone;
+            points.push({ month: m, rate });
+            // Apply inflation first
+            atone *= (1 + monthlyInfl);
+            // Then burn (reducing atone, increasing photon)
+            if (atone > monthlyBurn) {
+                const convRate = (PHOTON_MAX_SUPPLY - photon) / atone;
+                const photonMinted = monthlyBurn * convRate;
+                atone -= monthlyBurn;
+                photon += photonMinted;
+                if (photon > PHOTON_MAX_SUPPLY) photon = PHOTON_MAX_SUPPLY;
+            }
+        }
+        return { ...sc, points };
+    });
+
+    // Update result values
+    document.getElementById('scarcity-rate-base').textContent = baselinePoints[baselinePoints.length - 1].rate.toFixed(4);
+    scenarioPoints.forEach(sc => {
+        const elId = 'scarcity-rate-' + sc.label.replace('%','');
+        const el = document.getElementById(elId);
+        if (el) el.textContent = sc.points[sc.points.length - 1].rate.toFixed(4);
+    });
+
+    // Draw on canvas
+    const canvas = document.getElementById('scarcity-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width - 48;
+    const h = 350;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const padLeft = 65, padRight = 20, padTop = 25, padBottom = 40;
+    const chartW = w - padLeft - padRight;
+    const chartH = h - padTop - padBottom;
+
+    // Find y-range across all series
+    const allRates = [
+        ...baselinePoints.map(p => p.rate),
+        ...scenarioPoints.flatMap(s => s.points.map(p => p.rate))
+    ];
+    const maxRate = Math.max(...allRates) * 1.05;
+    const minRate = Math.min(...allRates) * 0.95;
+
+    // Grid
+    ctx.strokeStyle = chartColors.gridLine;
+    ctx.lineWidth = 1;
+    const gridN = 5;
+    for (let i = 0; i <= gridN; i++) {
+        const y = padTop + (chartH / gridN) * i;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(padLeft + chartW, y);
+        ctx.stroke();
+        const val = maxRate - (maxRate - minRate) * (i / gridN);
+        ctx.fillStyle = chartColors.labelColor;
+        ctx.font = '11px "DM Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(val.toFixed(2), padLeft - 8, y + 4);
+    }
+
+    // X labels
+    ctx.fillStyle = chartColors.labelColor;
+    ctx.textAlign = 'center';
+    for (let yr = 0; yr <= years; yr += 2) {
+        const x = padLeft + (yr * 12 / months) * chartW;
+        ctx.fillText(yr + 'y', x, h - 8);
+    }
+
+    function drawLine(points, color, lineW) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineW;
+        ctx.lineJoin = 'round';
+        points.forEach((p, i) => {
+            const x = padLeft + (p.month / months) * chartW;
+            const y = padTop + chartH - ((p.rate - minRate) / (maxRate - minRate)) * chartH;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    // Draw baseline (dashed)
+    ctx.setLineDash([6, 4]);
+    drawLine(baselinePoints, baselineColor, 1.5);
+    ctx.setLineDash([]);
+
+    // Draw scenarios
+    scenarioPoints.forEach(sc => drawLine(sc.points, sc.color, 2.5));
+
+    // Title
+    ctx.fillStyle = chartColors.titleColor;
+    ctx.font = '12px "DM Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('Conversion Rate Under Burn Scenarios (10yr)', padLeft, padTop - 8);
+}
+
+// ===== Fee Revenue Estimator =====
+
+function initFeeEstimator() {
+    const txSlider = document.getElementById('fee-daily-txs');
+    const gasSlider = document.getElementById('fee-avg-gas');
+    if (!txSlider || !gasSlider) return;
+
+    const update = () => updateFeeEstimator();
+    txSlider.addEventListener('input', update);
+    gasSlider.addEventListener('input', update);
+    updateFeeEstimator();
+}
+
+function updateFeeEstimator() {
+    const txsLog = parseFloat(document.getElementById('fee-daily-txs').value);
+    const dailyTxs = Math.round(Math.pow(10, txsLog));
+    const avgGas = parseFloat(document.getElementById('fee-avg-gas').value);
+
+    document.getElementById('fee-daily-txs-val').textContent = formatCompact(dailyTxs);
+    document.getElementById('fee-avg-gas-val').textContent = avgGas.toFixed(3);
+
+    const dailyFees = dailyTxs * avgGas;
+    const monthlyFees = dailyFees * 30;
+    const annualFees = dailyFees * 365;
+
+    const currentPhoton = chainData.photonSupply
+        ? Number(chainData.photonSupply / 1_000_000n)
+        : 74_000_000;
+
+    const pctSupply = (annualFees / currentPhoton * 100);
+
+    document.getElementById('fee-daily').textContent = formatCompact(dailyFees) + ' ◎';
+    document.getElementById('fee-monthly').textContent = formatCompact(monthlyFees) + ' ◎';
+    document.getElementById('fee-annual').textContent = formatCompact(annualFees) + ' ◎';
+    document.getElementById('fee-pct-supply').textContent = pctSupply < 0.01
+        ? '<0.01%'
+        : pctSupply.toFixed(2) + '%';
+}
+
+// ===== Historical Price Chart =====
+
+let priceChartData = { photon: [], atone: [] };
+let priceChartState = { show: 'both', days: 90, hoveredIndex: -1 };
+
+async function fetchPriceHistory(days) {
+    try {
+        const [photonRes, atoneRes] = await Promise.allSettled([
+            fetch(`${COINGECKO_API}/coins/photon-2/market_chart?vs_currency=usd&days=${days}`).then(r => r.json()),
+            fetch(`${COINGECKO_API}/coins/atomone/market_chart?vs_currency=usd&days=${days}`).then(r => r.json()),
+        ]);
+        if (photonRes.status === 'fulfilled' && photonRes.value.prices)
+            priceChartData.photon = photonRes.value.prices;
+        if (atoneRes.status === 'fulfilled' && atoneRes.value.prices)
+            priceChartData.atone = atoneRes.value.prices;
+        updatePriceSummary();
+        drawPriceChart();
+    } catch (err) {
+        console.error('Price history fetch failed:', err);
+    }
+}
+
+function updatePriceSummary() {
+    [['photon', priceChartData.photon], ['atone', priceChartData.atone]].forEach(([token, data]) => {
+        if (data.length < 2) return;
+        const current = data[data.length - 1][1];
+        const first = data[0][1];
+        const change = ((current - first) / first * 100);
+        document.getElementById(`price-${token}-current`).textContent = '$' + current.toFixed(4);
+        const el = document.getElementById(`price-${token}-change`);
+        el.textContent = (change >= 0 ? '+' : '') + change.toFixed(1) + '%';
+        el.style.color = change >= 0 ? '#4ade80' : '#f87171';
+    });
+}
+
+function drawPriceChart() {
+    const canvas = document.getElementById('price-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width - 48, h = 350;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+
+    const padL = 70, padR = 70, padT = 25, padB = 40;
+    const cW = w - padL - padR, cH = h - padT - padB;
+    const colors = getChartColors();
+    const showP = priceChartState.show === 'both' || priceChartState.show === 'photon';
+    const showA = priceChartState.show === 'both' || priceChartState.show === 'atone';
+    const photon = showP ? priceChartData.photon : [];
+    const atone = showA ? priceChartData.atone : [];
+
+    if (!photon.length && !atone.length) {
+        ctx.fillStyle = colors.labelColor;
+        ctx.font = '13px "DM Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Loading price data...', w / 2, h / 2);
+        return;
+    }
+
+    const allTimes = [...photon.map(p => p[0]), ...atone.map(p => p[0])];
+    const minTime = Math.min(...allTimes), maxTime = Math.max(...allTimes);
+    const timeRange = maxTime - minTime || 1;
+    const dual = showP && showA && priceChartState.show === 'both';
+
+    function minmax(data) {
+        const prices = data.map(p => p[1]);
+        return [Math.min(...prices) * 0.95, Math.max(...prices) * 1.05];
+    }
+    let pMin, pMax, aMin, aMax;
+    if (photon.length) [pMin, pMax] = minmax(photon);
+    if (atone.length) [aMin, aMax] = minmax(atone);
+
+    // Grid
+    ctx.strokeStyle = colors.gridLine; ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = padT + (cH / 5) * i;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + cW, y); ctx.stroke();
+    }
+
+    // Y-axis labels
+    ctx.font = '10px "DM Mono", monospace';
+    if (dual) {
+        ctx.fillStyle = '#d4a039'; ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            const v = pMax - (pMax - pMin) * (i / 5);
+            ctx.fillText('$' + v.toFixed(4), padL - 8, padT + (cH / 5) * i + 4);
+        }
+        ctx.fillStyle = '#6b8acd'; ctx.textAlign = 'left';
+        for (let i = 0; i <= 5; i++) {
+            const v = aMax - (aMax - aMin) * (i / 5);
+            ctx.fillText('$' + v.toFixed(4), padL + cW + 8, padT + (cH / 5) * i + 4);
+        }
+    } else {
+        const [sMin, sMax] = photon.length ? [pMin, pMax] : [aMin, aMax];
+        ctx.fillStyle = photon.length ? '#d4a039' : '#6b8acd'; ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            const v = sMax - (sMax - sMin) * (i / 5);
+            ctx.fillText('$' + v.toFixed(4), padL - 8, padT + (cH / 5) * i + 4);
+        }
+    }
+
+    // X-axis labels
+    ctx.fillStyle = colors.labelColor; ctx.textAlign = 'center';
+    const nLab = priceChartState.days <= 7 ? 7 : 6;
+    for (let i = 0; i <= nLab; i++) {
+        const t = minTime + (timeRange / nLab) * i;
+        const x = padL + (i / nLab) * cW;
+        ctx.fillText(new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), x, h - 8);
+    }
+
+    function toXY(data, yMin, yMax) {
+        return data.map(([t, p]) => ({
+            x: padL + ((t - minTime) / timeRange) * cW,
+            y: padT + cH - ((p - yMin) / (yMax - yMin)) * cH, time: t, price: p,
+        }));
+    }
+
+    function drawLine(pts, color, fillAlpha) {
+        if (pts.length < 2) return;
+        ctx.beginPath();
+        pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+        ctx.lineTo(pts[pts.length - 1].x, padT + cH); ctx.lineTo(pts[0].x, padT + cH); ctx.closePath();
+        const g = ctx.createLinearGradient(0, padT, 0, padT + cH);
+        g.addColorStop(0, color.replace(')', `, ${fillAlpha})`).replace('rgb', 'rgba'));
+        g.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'));
+        ctx.fillStyle = g; ctx.fill();
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+        ctx.stroke();
+    }
+
+    let photonPts = [], atonePts = [];
+    if (photon.length) { photonPts = toXY(photon, pMin, pMax); drawLine(photonPts, 'rgb(212, 160, 57)', 0.1); }
+    if (atone.length) { atonePts = toXY(atone, aMin, aMax); drawLine(atonePts, 'rgb(107, 138, 205)', 0.08); }
+
+    // Hover crosshair
+    if (priceChartState.hoveredIndex >= 0) {
+        const idx = priceChartState.hoveredIndex;
+        const xPos = padL + (idx / Math.max(photon.length, atone.length, 1)) * cW;
+        ctx.beginPath(); ctx.strokeStyle = colors.labelColor; ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]); ctx.moveTo(xPos, padT); ctx.lineTo(xPos, padT + cH); ctx.stroke(); ctx.setLineDash([]);
+        if (photonPts[idx]) { ctx.beginPath(); ctx.arc(photonPts[idx].x, photonPts[idx].y, 4, 0, Math.PI * 2); ctx.fillStyle = '#d4a039'; ctx.fill(); }
+        if (atonePts[idx]) { ctx.beginPath(); ctx.arc(atonePts[idx].x, atonePts[idx].y, 4, 0, Math.PI * 2); ctx.fillStyle = '#6b8acd'; ctx.fill(); }
+    }
+
+    // Title
+    ctx.fillStyle = colors.titleColor; ctx.font = '12px "DM Mono", monospace'; ctx.textAlign = 'left';
+    const parts = [];
+    if (showP) parts.push('PHOTON'); if (showA) parts.push('ATONE');
+    ctx.fillText(parts.join(' + ') + ' Price — ' + priceChartState.days + ' Days', padL, padT - 8);
+}
+
+function initPriceChart() {
+    fetchPriceHistory(priceChartState.days);
+
+    document.querySelectorAll('.price-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.price-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            priceChartState.show = btn.dataset.token;
+            drawPriceChart();
+        });
+    });
+
+    document.querySelectorAll('.price-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.price-range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            priceChartState.days = parseInt(btn.dataset.days);
+            fetchPriceHistory(priceChartState.days);
+        });
+    });
+
+    const canvas = document.getElementById('price-chart');
+    if (!canvas) return;
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / (dpr()) / rect.width;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const padL = 70, padR = 70;
+        const cW = (canvas.width / dpr()) - padL - padR;
+        if (mouseX < padL || mouseX > padL + cW) { hideTooltip(); return; }
+        const pct = (mouseX - padL) / cW;
+        const data = priceChartData.photon.length ? priceChartData.photon : priceChartData.atone;
+        const idx = Math.round(pct * (data.length - 1));
+        if (idx >= 0 && idx < data.length) {
+            priceChartState.hoveredIndex = idx;
+            drawPriceChart();
+            showPriceTooltip(e, idx);
+        }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        priceChartState.hoveredIndex = -1;
+        drawPriceChart();
+        hideTooltip();
+    });
+
+    setInterval(() => fetchPriceHistory(priceChartState.days), PRICE_REFRESH * 2);
+}
+
+function dpr() { return window.devicePixelRatio || 1; }
+
+function showPriceTooltip(e, idx) {
+    const tooltip = document.getElementById('price-tooltip');
+    if (!tooltip) return;
+    const photon = priceChartData.photon, atone = priceChartData.atone;
+    let dateStr = '';
+    const src = photon[idx] || atone[idx];
+    if (src) dateStr = new Date(src[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    document.getElementById('tooltip-date').textContent = dateStr;
+    const pRow = document.getElementById('tooltip-photon');
+    const aRow = document.getElementById('tooltip-atone');
+    if (photon[idx] && (priceChartState.show === 'both' || priceChartState.show === 'photon')) {
+        pRow.textContent = 'PHOTON  $' + photon[idx][1].toFixed(6); pRow.style.display = '';
+    } else pRow.style.display = 'none';
+    if (atone[idx] && (priceChartState.show === 'both' || priceChartState.show === 'atone')) {
+        aRow.textContent = 'ATONE   $' + atone[idx][1].toFixed(6); aRow.style.display = '';
+    } else aRow.style.display = 'none';
+    tooltip.style.display = 'block';
+    const wrapper = tooltip.parentElement;
+    const wR = wrapper.getBoundingClientRect();
+    let left = e.clientX - wR.left + 15, top = e.clientY - wR.top - 30;
+    if (left + 200 > wR.width) left -= 210;
+    if (top < 0) top = 10;
+    tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
+}
+
+function hideTooltip() {
+    const t = document.getElementById('price-tooltip');
+    if (t) t.style.display = 'none';
+}
+
+// ===== Validator Detail Expansion =====
+
+const _origFetchValidators = fetchValidators;
+
+fetchValidators = async function() {
+    try {
+        const res = await fetchJSON('/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100');
+        const validators = (res.validators || [])
+            .sort((a, b) => parseInt(b.tokens) - parseInt(a.tokens))
+            .slice(0, 20);
+        if (validators.length === 0) return;
+
+        const allValidatorsBonded = (res.validators || []).reduce((sum, v) => sum + parseInt(v.tokens), 0);
+        const totalValidators = (res.validators || []).length;
+
+        let cumulativePower = 0, nakamoto = 0;
+        for (const v of validators) {
+            cumulativePower += parseInt(v.tokens); nakamoto++;
+            if (cumulativePower / allValidatorsBonded > 0.334) break;
+        }
+
+        document.getElementById('val-total-bonded').textContent = formatCompact(allValidatorsBonded / 1e6) + ' ATONE';
+        document.getElementById('val-active-count').textContent = totalValidators.toString();
+        document.getElementById('val-nakamoto').textContent = nakamoto.toString();
+
+        const maxStake = parseInt(validators[0].tokens);
+        const tbody = document.getElementById('val-table-body');
+
+        tbody.innerHTML = validators.map((v, i) => {
+            const rank = i + 1;
+            const moniker = v.description?.moniker || 'Unknown';
+            const website = v.description?.website || '';
+            const tokens = parseInt(v.tokens);
+            const tokensDisplay = formatNumber(tokens / 1e6, 0);
+            const powerPct = (tokens / allValidatorsBonded * 100);
+            const barWidth = (tokens / maxStake * 100);
+            const commission = (parseFloat(v.commission?.commission_rates?.rate || 0) * 100).toFixed(1);
+            const maxComm = (parseFloat(v.commission?.commission_rates?.max_rate || 0) * 100).toFixed(0);
+            const maxChange = (parseFloat(v.commission?.commission_rates?.max_change_rate || 0) * 100).toFixed(1);
+            const rankClass = rank <= 3 ? ' top-3' : '';
+            const valAddr = v.operator_address || '';
+            const description = v.description?.details || '';
+            const jailed = v.jailed ? 'Yes ⚠️' : 'No ✅';
+            const mintscanUrl = valAddr ? `https://www.mintscan.io/atomone/validators/${valAddr}` : '#';
+            const delegatorShares = v.delegator_shares ? formatCompact(parseFloat(v.delegator_shares) / 1e6) : '—';
+
+            return `
+                <div class="val-row val-row-expandable" data-val-index="${i}" title="Click to expand">
+                    <span class="val-rank${rankClass}">${rank}</span>
+                    <div class="val-name">
+                        <span class="val-moniker">${escapeHtml(moniker)}</span>
+                        ${website ? `<span class="val-website">${escapeHtml(website.replace(/^https?:\/\//, ''))}</span>` : ''}
+                    </div>
+                    <span class="val-stake">${tokensDisplay}</span>
+                    <div class="val-power">
+                        <div class="val-power-bar"><div class="val-power-fill" style="width:${barWidth}%"></div></div>
+                        <span class="val-power-pct">${powerPct.toFixed(2)}%</span>
+                    </div>
+                    <span class="val-comm">${commission}%</span>
+                    <span class="val-expand-hint">+</span>
+                </div>
+                <div class="val-detail" id="val-detail-${i}">
+                    <div class="val-detail-inner">
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Commission</span>
+                            <span class="val-detail-value">${commission}%</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Max Commission</span>
+                            <span class="val-detail-value">${maxComm}%</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Max Daily Change</span>
+                            <span class="val-detail-value">${maxChange}%</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Delegator Shares</span>
+                            <span class="val-detail-value">${delegatorShares}</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Jailed</span>
+                            <span class="val-detail-value">${jailed}</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Mintscan</span>
+                            <span class="val-detail-value"><a href="${mintscanUrl}" target="_blank" style="color:var(--accent)">View →</a></span>
+                        </div>
+                        ${description ? `<div class="val-detail-desc">${escapeHtml(description)}</div>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Attach expand handlers
+        tbody.querySelectorAll('.val-row-expandable').forEach(row => {
+            row.addEventListener('click', (e) => {
+                e.preventDefault();
+                const idx = row.dataset.valIndex;
+                const detail = document.getElementById('val-detail-' + idx);
+                const isExpanded = row.classList.contains('expanded');
+                tbody.querySelectorAll('.val-row-expandable').forEach(r => r.classList.remove('expanded'));
+                tbody.querySelectorAll('.val-detail').forEach(d => d.style.maxHeight = '0');
+                tbody.querySelectorAll('.val-expand-hint').forEach(h => h.textContent = '+');
+                if (!isExpanded) {
+                    row.classList.add('expanded');
+                    row.querySelector('.val-expand-hint').textContent = '−';
+                    detail.style.maxHeight = detail.scrollHeight + 'px';
+                }
+            });
+        });
+    } catch (err) {
+        console.error('Validator fetch failed:', err);
+    }
+};
+
+// ===== IBC Connections =====
+
+const CHAIN_META = {
+    'osmosis-1': { name: 'Osmosis', icon: '🧪' },
+    'beezee-1': { name: 'BeeZee', icon: '🐝' },
+    'stargaze-1': { name: 'Stargaze', icon: '⭐' },
+    'cosmoshub-4': { name: 'Cosmos Hub', icon: '⚛️' },
+    'juno-1': { name: 'Juno', icon: '🔮' },
+    'akashnet-2': { name: 'Akash', icon: '☁️' },
+    'noble-1': { name: 'Noble', icon: '💎' },
+    'celestia': { name: 'Celestia', icon: '🌌' },
+};
+
+function getChainMeta(chainId) {
+    if (CHAIN_META[chainId]) return CHAIN_META[chainId];
+    const name = chainId.replace(/-\d+$/, '').replace(/^\w/, c => c.toUpperCase());
+    return { name, icon: '🔗' };
+}
+
+async function fetchIBCConnections() {
+    try {
+        const channelRes = await fetchJSON('/ibc/core/channel/v1/channels?pagination.limit=100');
+        const channels = channelRes.channels || [];
+        const channelsByChain = {};
+        const connectionIds = [...new Set(channels.flatMap(c => c.connection_hops))];
+
+        // Resolve connection → client → chain
+        const connectionMap = {};
+        for (const connId of connectionIds) {
+            try {
+                const c = await fetchJSON(`/ibc/core/connection/v1/connections/${connId}`);
+                if (c.connection?.client_id) connectionMap[connId] = c.connection.client_id;
+            } catch (e) { /* skip */ }
+        }
+
+        const clientChainMap = {};
+        const clientIds = [...new Set(Object.values(connectionMap))];
+        for (const cId of clientIds) {
+            try {
+                const r = await fetchJSON(`/ibc/core/client/v1/client_states/${cId}`);
+                if (r.client_state?.chain_id) clientChainMap[cId] = r.client_state.chain_id;
+            } catch (e) { /* skip */ }
+        }
+
+        for (const ch of channels) {
+            const connId = ch.connection_hops[0];
+            const clientId = connectionMap[connId];
+            const chainId = clientId ? (clientChainMap[clientId] || 'unknown') : 'unknown';
+            if (!channelsByChain[chainId]) channelsByChain[chainId] = [];
+            channelsByChain[chainId].push(ch);
+        }
+
+        const grid = document.getElementById('ibc-grid');
+        const sorted = Object.entries(channelsByChain).sort((a, b) => b[1].length - a[1].length);
+        const openChannels = channels.filter(c => c.state === 'STATE_OPEN').length;
+        const uniqueChains = Object.keys(channelsByChain).filter(k => k !== 'unknown').length;
+
+        document.getElementById('ibc-total-channels').textContent = channels.length.toString();
+        document.getElementById('ibc-open-channels').textContent = openChannels.toString();
+        document.getElementById('ibc-connected-chains').textContent = uniqueChains.toString();
+
+        grid.innerHTML = sorted.map(([chainId, chs]) => {
+            const meta = getChainMeta(chainId);
+            const openCount = chs.filter(c => c.state === 'STATE_OPEN').length;
+            const transfers = chs.filter(c => c.port_id === 'transfer');
+            const chList = transfers.slice(0, 3).map(c => c.channel_id).join(', ');
+            return `
+                <div class="ibc-card">
+                    <div class="ibc-card-header">
+                        <div class="ibc-chain-icon">${meta.icon}</div>
+                        <div>
+                            <div class="ibc-chain-name">${escapeHtml(meta.name)}</div>
+                            <div class="ibc-chain-id">${escapeHtml(chainId)}</div>
+                        </div>
+                    </div>
+                    <div class="ibc-card-details">
+                        <div class="ibc-detail-row">
+                            <span class="ibc-detail-label">Status</span>
+                            <span class="ibc-status-badge ${openCount > 0 ? 'ibc-status-open' : 'ibc-status-closed'}">
+                                <span class="ibc-status-dot"></span>
+                                ${openCount > 0 ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        <div class="ibc-detail-row">
+                            <span class="ibc-detail-label">Channels</span>
+                            <span class="ibc-detail-value">${chs.length} total (${openCount} open)</span>
+                        </div>
+                        <div class="ibc-detail-row">
+                            <span class="ibc-detail-label">Transfer</span>
+                            <span class="ibc-detail-value">${chList || 'none'}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        setTimeout(() => initScrollAnimations(), 100);
+    } catch (err) {
+        console.error('IBC connections fetch failed:', err);
+        document.getElementById('ibc-grid').innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;">Failed to load IBC data.</p>';
+    }
+}
+
 // ===== Init =====
 
 document.addEventListener('DOMContentLoaded', () => {
+    initThemeToggle();
     initScrollAnimations();
     initNavigation();
     initMobileNav();
     initFAQ();
+    initShareButtons();
+    initMintFlowAnimation();
 
     // Calculator input listener
     document.getElementById('calc-atone').addEventListener('input', updateCalculator);
@@ -857,6 +1942,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch chain data immediately, then every 30s
     fetchChainData().then(() => {
         initSimulator();
+        initScarcityModel();
+        initFeeEstimator();
+        drawSparkline();
     });
     setInterval(fetchChainData, REFRESH_INTERVAL);
     
@@ -878,6 +1966,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(drawSimulator, 200);
+        resizeTimer = setTimeout(() => {
+            drawSimulator();
+            drawScarcityModel();
+            if (priceChartData.photon.length || priceChartData.atone.length) drawPriceChart();
+        }, 200);
     });
 });

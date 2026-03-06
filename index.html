@@ -17,13 +17,149 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="PHOTON — The Fee Token of AtomOne">
     <meta name="twitter:description" content="Live chain data, arbitrage signals, and the dual-token thesis explained.">
+    <meta name="twitter:image" content="https://n0sn0de.github.io/photon-site/og-image.png">
     
+    <!-- Resource hints -->
+    <link rel="dns-prefetch" href="https://atomone-lcd.nosnode.com">
+    <link rel="dns-prefetch" href="https://api.coingecko.com">
+    <link rel="preconnect" href="https://atomone-lcd.nosnode.com" crossorigin>
+    <link rel="preconnect" href="https://api.coingecko.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="preload" href="app.js" as="script">
     <link rel="icon" type="image/svg+xml" href="assets/photon-token-round.svg">
     <link rel="apple-touch-icon" href="assets/photon-token-round.png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "PHOTON — The Fee Token of AtomOne",
+      "url": "https://n0sn0de.github.io/photon-site/",
+      "description": "Live chain data, conversion rate tools, and deep dives into AtomOne's dual-token architecture.",
+      "publisher": {
+        "@type": "Organization",
+        "name": "n0sn0de",
+        "url": "https://github.com/n0sn0de",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://n0sn0de.github.io/photon-site/assets/photon-token-round.png"
+        }
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "PHOTON",
+      "url": "https://n0sn0de.github.io/photon-site/",
+      "logo": "https://n0sn0de.github.io/photon-site/assets/photon-token-round.png",
+      "description": "Community resource for the Photon fee token of the AtomOne blockchain.",
+      "sameAs": [
+        "https://github.com/n0sn0de/photon-site",
+        "https://github.com/atomone-hub/atomone"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is PHOTON?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "PHOTON is the dedicated fee token of the AtomOne blockchain. Every transaction on AtomOne requires PHOTON for gas fees. It's created by burning ATONE through a one-way conversion, has a hard cap of 1 billion tokens, and is non-inflationary by design."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does AtomOne need two tokens?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Security. When a single token handles both staking and fees, an attacker can buy it on exchanges, accumulate enough to control consensus, and manipulate IBC transactions. With separated tokens, accumulating fee tokens gives zero consensus power."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is the conversion rate calculated?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The formula is: rate = (1,000,000,000 − photon_supply) / atone_supply. The rate naturally decreases over time as more PHOTON is minted and as ATONE inflates at 7-20% annually."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I convert PHOTON back to ATONE?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The burn is irreversible at the protocol level. ATONE to PHOTON is a one-way gate. You can trade PHOTON for ATONE on decentralized exchanges like Osmosis."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need PHOTON to mint my first PHOTON?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. The MsgMintPhoton transaction type is fee-exempt by default. You can burn ATONE to mint PHOTON without paying any fees."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is PHOTON inflationary?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. PHOTON has a hard cap of 1 billion tokens. New PHOTON is only created when someone burns ATONE. There is no inflation, no block rewards in PHOTON, and no other minting mechanism."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where can I buy or trade PHOTON?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "PHOTON trades on Osmosis DEX. The main trading pair is PHOTON/ATONE. You can also mint it directly on-chain by burning ATONE."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What wallets support PHOTON?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Any wallet that supports the AtomOne chain can hold PHOTON. Keplr is the most popular option. You can also use Ledger hardware wallets for cold storage via the Cosmos app."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens when PHOTON becomes the exclusive fee token?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A future governance vote will activate PHOTON-only fees. Every transaction on AtomOne and all ICS shards will require PHOTON. The MsgMintPhoton transaction will remain fee-exempt."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is AtomOne's relationship to the Cosmos Hub?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "AtomOne is a community-driven fork of the Cosmos Hub, created after Proposal #848 reduced ATOM inflation. It's a return to the original multi-token architecture proposed in 2019."
+          }
+        }
+      ]
+    }
+    </script>
 </head>
 <body>
     <!-- Skip to content (a11y) -->
@@ -42,16 +178,24 @@
             <a href="#mechanics">Mechanics</a>
             <a href="#live-data">Live Data</a>
             <a href="#arbitrage">Mint vs Buy</a>
+            <a href="#price-history">Charts</a>
             <a href="#simulator">Simulator</a>
+            <a href="#scarcity">Scarcity</a>
+            <a href="#fee-estimator">Fees</a>
             <a href="#dual-token">Dual Token</a>
             <a href="#source-code">Source</a>
             <a href="#governance">Governance</a>
             <a href="#validators">Validators</a>
             <a href="#treasury">Treasury</a>
+            <a href="#ibc-connections">IBC</a>
             <a href="#how-to-mint">How to Mint</a>
             <a href="#faq">FAQ</a>
             <a href="#resources">Resources</a>
         </div>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">
+            <svg class="theme-icon theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg class="theme-icon theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
         <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
             <span></span><span></span><span></span>
         </button>
@@ -82,9 +226,12 @@
                     <span class="hero-stat-label">PHOTON Supply</span>
                 </div>
                 <div class="hero-stat-divider"></div>
-                <div class="hero-stat">
-                    <span class="hero-stat-value" id="stat-rate">—</span>
-                    <span class="hero-stat-label">ATONE → PHOTON Rate</span>
+                <div class="hero-stat hero-stat-with-sparkline">
+                    <div class="hero-stat-rate-row">
+                        <span class="hero-stat-value" id="stat-rate">—</span>
+                        <svg id="rate-sparkline" class="rate-sparkline" width="60" height="24" viewBox="0 0 60 24" fill="none"></svg>
+                    </div>
+                    <span class="hero-stat-label">ATONE → PHOTON Rate <span class="sparkline-hint">12mo trend ↘</span></span>
                 </div>
                 <div class="hero-stat-divider"></div>
                 <div class="hero-stat">
@@ -187,30 +334,53 @@
                 <p class="section-desc">A one-way burn mechanism ensures PHOTON's supply is forever tied to ATONE's sacrifice.</p>
             </div>
 
-            <div class="mechanics-flow">
-                <div class="flow-step">
-                    <div class="flow-number">01</div>
-                    <div class="flow-content">
-                        <h3>Burn ATONE</h3>
-                        <p>Users send ATONE to the burn address via <code>MsgMintPhoton</code>. This is <strong>irreversible</strong> — the ATONE is permanently destroyed.</p>
-                    </div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-number">02</div>
-                    <div class="flow-content">
-                        <h3>Conversion Rate Applied</h3>
-                        <p>The protocol calculates: <code class="formula">photon_minted = atone_burned × (max_supply − current_supply) / atone_supply</code>. The rate naturally decreases over time as ATONE inflates.</p>
-                    </div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-number">03</div>
-                    <div class="flow-content">
-                        <h3>Receive PHOTON</h3>
-                        <p>Fresh PHOTON is minted and sent to your wallet. Use it for transaction fees across AtomOne, IBC transfers, and ICS payments.</p>
-                    </div>
-                </div>
+            <div class="mint-flow-canvas" id="mint-flow-canvas" role="img" aria-label="Animated visualization of the ATONE to PHOTON burn-and-mint process">
+                <svg class="mint-flow-svg" id="mint-flow-svg" viewBox="0 0 800 220" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <radialGradient id="burn-glow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#f87171" stop-opacity="0.6"/>
+                            <stop offset="100%" stop-color="#f87171" stop-opacity="0"/>
+                        </radialGradient>
+                        <linearGradient id="atone-grad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#6b8acd"/>
+                            <stop offset="100%" stop-color="#5a77b5"/>
+                        </linearGradient>
+                        <linearGradient id="photon-grad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#d4a017"/>
+                            <stop offset="100%" stop-color="#e8b830"/>
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- ATONE side -->
+                    <rect x="30" y="60" width="180" height="100" rx="16" fill="none" stroke="#6b8acd" stroke-width="1.5" opacity="0.4"/>
+                    <text x="120" y="98" text-anchor="middle" fill="#6b8acd" font-family="var(--font-mono)" font-size="11" opacity="0.5">ATONE</text>
+                    <text x="120" y="120" text-anchor="middle" fill="#e8e6e1" font-family="var(--font-display)" font-size="18">Burn Input</text>
+                    <text x="120" y="145" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="9">MsgMintPhoton</text>
+                    
+                    <!-- Burn zone -->
+                    <circle cx="400" cy="110" r="40" fill="none" stroke="#f87171" stroke-width="1" opacity="0.3" stroke-dasharray="4 4"/>
+                    <circle id="burn-core" cx="400" cy="110" r="8" fill="#f87171" opacity="0.4"/>
+                    <text x="400" y="175" text-anchor="middle" fill="#f87171" font-family="var(--font-mono)" font-size="10" opacity="0.5">🔥 BURN</text>
+                    
+                    <!-- PHOTON side -->
+                    <rect x="590" y="60" width="180" height="100" rx="16" fill="none" stroke="#d4a017" stroke-width="1.5" opacity="0.4"/>
+                    <text x="680" y="98" text-anchor="middle" fill="#d4a017" font-family="var(--font-mono)" font-size="11" opacity="0.5">PHOTON</text>
+                    <text x="680" y="120" text-anchor="middle" fill="#e8e6e1" font-family="var(--font-display)" font-size="18">Mint Output</text>
+                    <text x="680" y="145" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="9">Non-inflationary</text>
+                    
+                    <!-- Flow paths (dashed lines) -->
+                    <path d="M210 110 L360 110" stroke="#6b8acd" stroke-width="1" stroke-dasharray="6 4" opacity="0.2"/>
+                    <path d="M440 110 L590 110" stroke="#d4a017" stroke-width="1" stroke-dasharray="6 4" opacity="0.2"/>
+                    
+                    <!-- Animated particles group -->
+                    <g id="flow-particles"></g>
+                    
+                    <!-- Step labels -->
+                    <text x="285" y="90" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="8" opacity="0.4">01 SEND</text>
+                    <text x="400" y="58" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="8" opacity="0.4">02 CONVERT</text>
+                    <text x="515" y="90" text-anchor="middle" fill="#5c5b58" font-family="var(--font-mono)" font-size="8" opacity="0.4">03 MINT</text>
+                </svg>
+                <span class="replay-hint">click to replay</span>
             </div>
 
             <div class="mechanics-details">
@@ -438,7 +608,61 @@
     </section>
 
     <!-- Conversion Rate Simulator -->
-    <section class="section section-dark" id="simulator">
+    <!-- Price History Chart -->
+    <section class="section section-dark" id="price-history">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Market Data</span>
+                <h2 class="section-title">Price history</h2>
+                <p class="section-desc">90-day price chart for PHOTON and ATONE. Data from CoinGecko.</p>
+            </div>
+
+            <div class="price-chart-container">
+                <div class="price-chart-controls">
+                    <div class="price-chart-toggle">
+                        <button class="price-toggle-btn active" data-token="both">Both</button>
+                        <button class="price-toggle-btn" data-token="photon">PHOTON</button>
+                        <button class="price-toggle-btn" data-token="atone">ATONE</button>
+                    </div>
+                    <div class="price-chart-range">
+                        <button class="price-range-btn" data-days="7">7D</button>
+                        <button class="price-range-btn" data-days="30">30D</button>
+                        <button class="price-range-btn active" data-days="90">90D</button>
+                    </div>
+                </div>
+                <div class="price-chart-wrapper">
+                    <canvas id="price-chart" width="900" height="400"></canvas>
+                    <div class="price-chart-tooltip" id="price-tooltip" style="display:none;">
+                        <div class="price-tooltip-date" id="tooltip-date"></div>
+                        <div class="price-tooltip-row photon-row" id="tooltip-photon"></div>
+                        <div class="price-tooltip-row atone-row" id="tooltip-atone"></div>
+                    </div>
+                </div>
+                <div class="price-chart-summary">
+                    <div class="price-summary-item">
+                        <span class="price-summary-dot photon-dot"></span>
+                        <span class="price-summary-label">PHOTON</span>
+                        <span class="price-summary-value" id="price-photon-current">—</span>
+                        <span class="price-summary-change" id="price-photon-change">—</span>
+                    </div>
+                    <div class="price-summary-item">
+                        <span class="price-summary-dot atone-dot"></span>
+                        <span class="price-summary-label">ATONE</span>
+                        <span class="price-summary-value" id="price-atone-current">—</span>
+                        <span class="price-summary-change" id="price-atone-change">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-source" style="margin-top: 2rem;">
+                <span class="data-source-dot"></span>
+                Prices from <a href="https://www.coingecko.com/" target="_blank">CoinGecko</a> — updates every 60s
+            </div>
+        </div>
+    </section>
+
+    <!-- Conversion Rate Simulator -->
+    <section class="section" id="simulator">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Interactive</span>
@@ -506,6 +730,145 @@
             </div>
 
             <p class="sim-disclaimer">This simulator models rate decay from ATONE inflation only. Actual rate depends on how much PHOTON is minted (burning ATONE reduces supply, partially offsetting inflation). The interplay between burning and inflation makes exact prediction impossible — this shows the general trajectory.</p>
+        </div>
+    </section>
+
+    <!-- PHOTON Scarcity Model -->
+    <section class="section" id="scarcity">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Analysis</span>
+                <h2 class="section-title">Scarcity model</h2>
+                <p class="section-desc">How does the conversion rate shift under different burn scenarios? The interplay between ATONE burning (reducing supply) and inflation (increasing supply) creates complex dynamics.</p>
+            </div>
+
+            <div class="scarcity-container">
+                <div class="scarcity-controls">
+                    <div class="sim-control">
+                        <label for="scarcity-inflation">ATONE Inflation Rate</label>
+                        <div class="sim-slider-wrap">
+                            <input type="range" id="scarcity-inflation" min="7" max="20" step="0.5" value="13">
+                            <span class="sim-slider-value" id="scarcity-inflation-val">13%</span>
+                        </div>
+                        <div class="sim-slider-labels">
+                            <span>7% min</span>
+                            <span>13%</span>
+                            <span>20% max</span>
+                        </div>
+                    </div>
+                    <div class="scarcity-legend">
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background:#4ade80"></span>
+                            <span>Conservative (5% burned)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background:#d4a853"></span>
+                            <span>Moderate (20% burned)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background:#f87171"></span>
+                            <span>Aggressive (50% burned)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch" style="background:rgba(255,255,255,0.2)"></span>
+                            <span>Baseline (no burn)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sim-chart-container">
+                    <canvas id="scarcity-chart" width="800" height="400"></canvas>
+                </div>
+
+                <div class="sim-results">
+                    <div class="sim-result">
+                        <span class="sim-result-label">5% Burn Rate (10y)</span>
+                        <span class="sim-result-value" id="scarcity-rate-5">—</span>
+                    </div>
+                    <div class="sim-result">
+                        <span class="sim-result-label">20% Burn Rate (10y)</span>
+                        <span class="sim-result-value" id="scarcity-rate-20">—</span>
+                    </div>
+                    <div class="sim-result">
+                        <span class="sim-result-label">50% Burn Rate (10y)</span>
+                        <span class="sim-result-value" id="scarcity-rate-50">—</span>
+                    </div>
+                    <div class="sim-result">
+                        <span class="sim-result-label">Baseline (no burn)</span>
+                        <span class="sim-result-value" id="scarcity-rate-base">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="sim-disclaimer">Burn scenarios model cumulative ATONE supply burned over 10 years. In reality, burns happen in discrete transactions and interact with staking dynamics. This shows directional impact — actual outcomes depend on community behavior, governance decisions, and market conditions.</p>
+        </div>
+    </section>
+
+    <!-- Fee Revenue Estimator -->
+    <section class="section section-dark" id="fee-estimator">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Utility</span>
+                <h2 class="section-title">Fee revenue estimator</h2>
+                <p class="section-desc">As AtomOne grows, transaction fees create persistent demand for PHOTON. Estimate the fee burn at different adoption levels.</p>
+            </div>
+
+            <div class="fee-container">
+                <div class="fee-controls">
+                    <div class="sim-control">
+                        <label for="fee-daily-txs">Daily Transactions</label>
+                        <div class="sim-slider-wrap">
+                            <input type="range" id="fee-daily-txs" min="3" max="6" step="0.01" value="4">
+                            <span class="sim-slider-value" id="fee-daily-txs-val">10,000</span>
+                        </div>
+                        <div class="sim-slider-labels">
+                            <span>1K</span>
+                            <span>10K</span>
+                            <span>1M</span>
+                        </div>
+                    </div>
+                    <div class="sim-control">
+                        <label for="fee-avg-gas">Avg Gas Price (PHOTON)</label>
+                        <div class="sim-slider-wrap">
+                            <input type="range" id="fee-avg-gas" min="0.001" max="0.5" step="0.001" value="0.01">
+                            <span class="sim-slider-value" id="fee-avg-gas-val">0.010</span>
+                        </div>
+                        <div class="sim-slider-labels">
+                            <span>0.001</span>
+                            <span>Low</span>
+                            <span>0.500</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fee-results-grid">
+                    <div class="fee-result-card">
+                        <div class="fee-result-icon">📅</div>
+                        <div class="fee-result-value" id="fee-daily">—</div>
+                        <div class="fee-result-label">Daily Fees</div>
+                    </div>
+                    <div class="fee-result-card">
+                        <div class="fee-result-icon">📆</div>
+                        <div class="fee-result-value" id="fee-monthly">—</div>
+                        <div class="fee-result-label">Monthly Fees</div>
+                    </div>
+                    <div class="fee-result-card">
+                        <div class="fee-result-icon">📊</div>
+                        <div class="fee-result-value" id="fee-annual">—</div>
+                        <div class="fee-result-label">Annual Fees</div>
+                    </div>
+                    <div class="fee-result-card fee-result-highlight">
+                        <div class="fee-result-icon">🔥</div>
+                        <div class="fee-result-value" id="fee-pct-supply">—</div>
+                        <div class="fee-result-label">% Supply Consumed / Year</div>
+                    </div>
+                </div>
+
+                <div class="fee-context">
+                    <h4>Context: Ethereum's fee burn</h4>
+                    <p>Ethereum's EIP-1559 burns ~1-3% of ETH supply annually at peak activity. AtomOne's fixed-cap PHOTON means fee burns permanently reduce circulating supply with no new issuance to offset — making even modest usage levels deflationary for PHOTON holders.</p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -753,7 +1116,45 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
     </section>
 
     <!-- Dynamic Fee Module -->
-    <section class="section" id="dynamic-fees">
+    <!-- IBC Connections -->
+    <section class="section" id="ibc-connections">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Interchain</span>
+                <h2 class="section-title">IBC connections</h2>
+                <p class="section-desc">AtomOne's bridges to the Cosmos ecosystem. Every connection is a pathway for PHOTON to flow across chains.</p>
+            </div>
+
+            <div class="ibc-grid" id="ibc-grid">
+                <div class="ibc-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div></div>
+                <div class="ibc-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div></div>
+                <div class="ibc-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div></div>
+            </div>
+
+            <div class="ibc-summary" id="ibc-summary">
+                <div class="ibc-summary-stat">
+                    <span class="ibc-summary-value" id="ibc-total-channels">—</span>
+                    <span class="ibc-summary-label">Total Channels</span>
+                </div>
+                <div class="ibc-summary-stat">
+                    <span class="ibc-summary-value" id="ibc-open-channels">—</span>
+                    <span class="ibc-summary-label">Open Channels</span>
+                </div>
+                <div class="ibc-summary-stat">
+                    <span class="ibc-summary-value" id="ibc-connected-chains">—</span>
+                    <span class="ibc-summary-label">Connected Chains</span>
+                </div>
+            </div>
+
+            <div class="data-source" style="margin-top: 2rem;">
+                <span class="data-source-dot"></span>
+                From <a href="https://atomone-lcd.nosnode.com/swagger/" target="_blank">NosNode LCD</a> — <code>ibc/core/channel/v1</code>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dynamic Fee Module -->
+    <section class="section section-dark" id="dynamic-fees">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Fee Economics</span>
@@ -786,7 +1187,7 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
     </section>
 
     <!-- Nakamoto Bonus Explainer -->
-    <section class="section section-dark" id="nakamoto-bonus">
+    <section class="section" id="nakamoto-bonus">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Decentralization Incentive</span>
@@ -1110,6 +1511,7 @@ atomoned tx photon mint-photon 100000000uatone \
         </div>
     </footer>
 
-    <script src="app.js"></script>
+    <div class="share-toast" id="share-toast">Link copied to clipboard</div>
+    <script src="app.js" defer></script>
 </body>
 </html>

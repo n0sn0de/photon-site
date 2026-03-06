@@ -1888,9 +1888,11 @@ code {
 .constitution-block,
 .constitution-context,
 .gov-card:not(.skeleton),
+.gov-card-accordion,
 .gov-active-banner,
 .val-summary-stat,
-.val-table {
+.val-table,
+.mint-flow-canvas {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.6s ease, transform 0.6s ease;
@@ -1899,9 +1901,11 @@ code {
 .constitution-block.visible,
 .constitution-context.visible,
 .gov-card.visible:not(.skeleton),
+.gov-card-accordion.visible,
 .gov-active-banner.visible,
 .val-summary-stat.visible,
-.val-table.visible {
+.val-table.visible,
+.mint-flow-canvas.visible {
     opacity: 1;
     transform: translateY(0);
 }
@@ -2608,4 +2612,1089 @@ input:focus:not(:focus-visible) {
         font-size: 0.92rem;
         padding: 1rem 0;
     }
+    
+    .fee-results-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .scarcity-legend {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+}
+
+/* ===== Scarcity Model Section ===== */
+
+.scarcity-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.scarcity-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.scarcity-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+}
+
+.legend-swatch {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ===== Fee Revenue Estimator ===== */
+
+.fee-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.fee-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .fee-controls {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+.fee-results-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.fee-result-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.fee-result-card:hover {
+    border-color: rgba(212,168,83,0.2);
+}
+
+.fee-result-highlight {
+    border-color: rgba(212,168,83,0.15);
+    background: rgba(212,168,83,0.04);
+}
+
+.fee-result-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.fee-result-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: #d4a853;
+    margin-bottom: 0.25rem;
+}
+
+.fee-result-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fee-context {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+}
+
+.fee-context h4 {
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0.5rem;
+}
+
+.fee-context p {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.7;
+}
+
+/* ============================================
+   SESSION 7: Light/Dark Mode Toggle
+   ============================================ */
+
+/* Theme Toggle Button */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    color: var(--accent);
+    border-color: var(--border-accent);
+    background: var(--accent-glow);
+}
+
+/* Sun icon (show in dark mode → click to go light) */
+.theme-icon-light { display: none; }
+.theme-icon-dark { display: block; }
+
+/* In light mode, show moon icon (click to go dark) */
+[data-theme="light"] .theme-icon-light { display: block; }
+[data-theme="light"] .theme-icon-dark { display: none; }
+
+/* Light Mode Color Overrides */
+[data-theme="light"] {
+    --bg-primary: #faf8f5;
+    --bg-secondary: #f0ede8;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f7f5f2;
+    --bg-elevated: #ece9e3;
+    
+    --text-primary: #1a1815;
+    --text-secondary: #5c5952;
+    --text-muted: #8a877f;
+    
+    --accent: #b8892f;
+    --accent-dim: #9a7328;
+    --accent-glow: rgba(184, 137, 47, 0.1);
+    --accent-bright: #d4a039;
+    
+    --photon: #b8892f;
+    --atone: #5a77b5;
+    
+    --border: rgba(0, 0, 0, 0.08);
+    --border-accent: rgba(184, 137, 47, 0.25);
+}
+
+/* Light mode element overrides */
+[data-theme="light"] .grain { opacity: 0.015; }
+
+[data-theme="light"] .nav {
+    background: rgba(250, 248, 245, 0.88);
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .nav-links a { color: var(--text-secondary); }
+[data-theme="light"] .nav-links a:hover { color: var(--accent); }
+
+[data-theme="light"] .hero-orb-1 {
+    background: radial-gradient(circle, rgba(184, 137, 47, 0.12), transparent 70%);
+}
+[data-theme="light"] .hero-orb-2 {
+    background: radial-gradient(circle, rgba(107, 138, 205, 0.08), transparent 70%);
+}
+[data-theme="light"] .hero-orb-3 {
+    background: radial-gradient(circle, rgba(184, 137, 47, 0.06), transparent 70%);
+}
+
+[data-theme="light"] .hero-title-accent {
+    text-shadow: none;
+}
+
+[data-theme="light"] .nav-links {
+    background: rgba(250, 248, 245, 0.97) !important;
+}
+
+[data-theme="light"] .nav-hamburger span {
+    background: var(--text-primary);
+}
+
+[data-theme="light"] .code-block {
+    background: rgba(0, 0, 0, 0.03);
+    color: #5c5952;
+}
+
+[data-theme="light"] .calc-input-wrap input {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .mint-cli {
+    background: #f0ede8;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .chain-bar {
+    background: rgba(240, 237, 232, 0.92);
+    border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .chain-bar-label {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] .chain-bar-value {
+    color: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="light"] .progress-fill {
+    background: linear-gradient(90deg, #9a7328, #d4a039);
+}
+
+[data-theme="light"] .sim-slider-wrap input[type="range"] {
+    background: #ddd9d2;
+}
+
+[data-theme="light"] .token-atone {
+    background: linear-gradient(160deg, #ffffff, rgba(107, 138, 205, 0.06));
+}
+
+[data-theme="light"] .token-photon {
+    background: linear-gradient(160deg, #ffffff, rgba(184, 137, 47, 0.06));
+}
+
+[data-theme="light"] .data-card-featured {
+    background: linear-gradient(135deg, #ffffff, rgba(184, 137, 47, 0.05));
+}
+
+[data-theme="light"] .security-callout {
+    background: linear-gradient(135deg, rgba(184, 137, 47, 0.04), rgba(107, 138, 205, 0.03));
+}
+
+[data-theme="light"] .footer {
+    border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .arb-signal.mint-cheaper {
+    border-color: rgba(34, 160, 68, 0.3);
+    background: rgba(34, 160, 68, 0.05);
+}
+
+[data-theme="light"] .arb-signal.buy-cheaper {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+[data-theme="light"] .constitution-text p {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .fee-context {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .fee-context h4 {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .fee-context p {
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   SESSION 7: Rate Decay Sparkline (Hero)
+   ============================================ */
+
+.hero-stat-with-sparkline {
+    position: relative;
+}
+
+.hero-stat-rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.rate-sparkline {
+    opacity: 0.65;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.rate-sparkline:hover {
+    opacity: 1;
+}
+
+.sparkline-hint {
+    font-size: 0.55rem;
+    opacity: 0.45;
+    font-style: italic;
+    margin-left: 0.3rem;
+}
+
+/* Mobile adjustments for Session 7 */
+@media (max-width: 768px) {
+    .theme-toggle {
+        margin-right: 0.3rem;
+    }
+    
+    .rate-sparkline {
+        width: 48px;
+        height: 20px;
+    }
+    
+    .sparkline-hint {
+        display: none;
+    }
+}
+
+/* ============================================
+   SESSION 7: Governance Proposal Accordion
+   ============================================ */
+
+.gov-card-accordion {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    display: block;
+}
+
+.gov-card-accordion:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(212, 160, 57, 0.1);
+}
+
+.gov-card-accordion .gov-card-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 1rem 1.5rem;
+    align-items: center;
+}
+
+.gov-card-accordion .gov-expand-icon {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    transition: transform 0.3s ease, color 0.3s ease;
+    width: 20px;
+    text-align: center;
+}
+
+.gov-card-accordion.open .gov-expand-icon {
+    transform: rotate(90deg);
+    color: var(--accent);
+}
+
+.gov-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    padding: 0 0;
+}
+
+.gov-card-accordion.open .gov-detail {
+    max-height: 600px;
+    padding: 1.2rem 0 0;
+}
+
+.gov-detail-inner {
+    border-top: 1px solid var(--border);
+    padding-top: 1.2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.gov-detail-summary {
+    grid-column: 1 / -1;
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.gov-detail-summary::-webkit-scrollbar {
+    width: 4px;
+}
+
+.gov-detail-summary::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+.gov-detail-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.gov-detail-stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.gov-detail-stat-value {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.gov-detail-link {
+    grid-column: 1 / -1;
+    text-align: right;
+    margin-top: 0.5rem;
+}
+
+.gov-detail-link a {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.gov-detail-link a:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.gov-detail-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 1rem 0;
+}
+
+@media (max-width: 768px) {
+    .gov-card-accordion .gov-card-header {
+        grid-template-columns: 1fr auto auto;
+    }
+    .gov-card-accordion .gov-id {
+        display: none;
+    }
+    .gov-detail-inner {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ============================================
+   SESSION 7: Social Sharing Buttons
+   ============================================ */
+
+.section-share {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-left: 0.8rem;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    vertical-align: middle;
+}
+
+.section-header:hover .section-share,
+.section-share.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    font-size: 0;
+}
+
+.share-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(212, 160, 57, 0.08);
+}
+
+.share-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.share-btn.copied {
+    border-color: #4ade80;
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.share-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+}
+
+.share-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 768px) {
+    .section-share {
+        opacity: 1;
+        transform: translateX(0);
+        margin-left: 0;
+        margin-top: 0.5rem;
+        display: flex;
+    }
+}
+
+/* ============================================
+   SESSION 7: Interactive Mint Flow Animation
+   ============================================ */
+
+.mint-flow-canvas {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 4rem;
+    height: 220px;
+    cursor: pointer;
+}
+
+.mint-flow-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.mint-flow-canvas .replay-hint {
+    position: absolute;
+    bottom: -1.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.mint-flow-canvas:hover .replay-hint,
+.mint-flow-canvas.played .replay-hint {
+    opacity: 0.6;
+}
+
+/* Mint flow particle animations */
+@keyframes flowRight {
+    0% { transform: translateX(0); opacity: 0; }
+    15% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { transform: translateX(var(--flow-dist, 120px)); opacity: 0; }
+}
+
+@keyframes burnPulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes mintGlow {
+    0% { r: 3; opacity: 0; }
+    40% { r: 6; opacity: 1; }
+    100% { r: 3; opacity: 0.6; }
+}
+
+@media (max-width: 768px) {
+    .mint-flow-canvas {
+        height: 180px;
+    }
+}
+
+/* ============================================
+   SESSION 8: Historical Price Chart
+   ============================================ */
+
+.price-chart-container {
+    max-width: 950px;
+    margin: 0 auto;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.price-chart-container.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.price-chart-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.price-chart-toggle,
+.price-chart-range {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.price-toggle-btn,
+.price-range-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.price-toggle-btn:hover,
+.price-range-btn:hover {
+    color: var(--text-secondary);
+    background: rgba(212, 160, 57, 0.05);
+}
+
+.price-toggle-btn.active,
+.price-range-btn.active {
+    color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.price-chart-wrapper {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.price-chart-wrapper canvas {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+}
+
+.price-chart-tooltip {
+    position: absolute;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-accent);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    pointer-events: none;
+    z-index: 10;
+    min-width: 180px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.price-tooltip-date {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.price-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.15rem 0;
+}
+
+.price-tooltip-row.photon-row { color: var(--accent); }
+.price-tooltip-row.atone-row { color: var(--atone); }
+
+.price-chart-summary {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.price-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+}
+
+.price-summary-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.price-summary-dot.photon-dot { background: var(--accent); }
+.price-summary-dot.atone-dot { background: var(--atone); }
+
+.price-summary-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.price-summary-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.price-summary-change {
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   SESSION 8: Validator Detail Expansion
+   ============================================ */
+
+.val-detail {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s ease;
+}
+
+.val-row-expandable {
+    cursor: pointer;
+    position: relative;
+}
+
+.val-expand-hint {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    transition: transform 0.3s, color 0.3s;
+    pointer-events: none;
+}
+
+.val-row-expandable.expanded .val-expand-hint {
+    color: var(--accent);
+}
+
+.val-detail-inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(212, 160, 57, 0.02);
+}
+
+.val-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.val-detail-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.val-detail-value {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.val-detail-desc {
+    grid-column: 1 / -1;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-height: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.val-row-expandable:hover {
+    background: rgba(212, 160, 57, 0.04);
+}
+
+/* ============================================
+   SESSION 8: IBC Connections
+   ============================================ */
+
+.ibc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.ibc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s ease;
+}
+
+.ibc-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ibc-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+}
+
+.ibc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ibc-chain-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+
+.ibc-chain-name {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.ibc-chain-id {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.ibc-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ibc-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.ibc-detail-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.ibc-detail-value {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.ibc-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.ibc-status-open {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.ibc-status-closed {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.ibc-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.ibc-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.ibc-summary-stat {
+    text-align: center;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.ibc-summary-value {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+}
+
+.ibc-summary-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Session 8 scroll animations */
+.ibc-grid,
+.ibc-summary {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.ibc-grid.visible,
+.ibc-summary.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===== Session 8 Mobile ===== */
+@media (max-width: 768px) {
+    .price-chart-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .price-chart-toggle,
+    .price-chart-range {
+        justify-content: center;
+    }
+    
+    .price-chart-wrapper {
+        padding: 1rem 0.5rem;
+    }
+    
+    .price-chart-summary {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .ibc-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ibc-summary {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .val-detail-inner {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .val-expand-hint {
+        display: none;
+    }
+}
+
+/* ===== Session 8 Light Mode ===== */
+[data-theme="light"] .price-chart-wrapper {
+    background: #ffffff;
+}
+
+[data-theme="light"] .price-chart-tooltip {
+    background: #ffffff;
+    border-color: rgba(184, 137, 47, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .val-detail-inner {
+    background: rgba(184, 137, 47, 0.03);
+}
+
+[data-theme="light"] .ibc-chain-icon {
+    background: var(--bg-secondary);
 }

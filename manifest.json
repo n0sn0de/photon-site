@@ -1,0 +1,23 @@
+{
+  "name": "PHOTON — The Fee Token of AtomOne",
+  "short_name": "PHOTON",
+  "description": "Live chain data, conversion rate tools, and deep dives into AtomOne's dual-token architecture.",
+  "start_url": "/photon-site/",
+  "scope": "/photon-site/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "icons": [
+    {
+      "src": "assets/photon-token-round.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/photon-token-round.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
