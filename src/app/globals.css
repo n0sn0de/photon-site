@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary font-body;
+    overflow-x: hidden;
+  }
+
+  a {
+    @apply text-accent transition-colors duration-200;
+  }
+  a:hover {
+    @apply text-accent-bright;
+  }
+
+  code {
+    @apply font-mono text-[0.85em] bg-accent/10 px-1.5 py-0.5 rounded text-accent;
+  }
+}
+
+/* Grain Overlay */
+.grain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px;
+}
+
+/* Section styling */
+.section {
+  @apply py-16 md:py-24;
+}
+
+.section-dark {
+  @apply bg-bg-secondary;
+}
+
+/* Progress bar */
+.progress-bar {
+  @apply w-full h-1.5 bg-bg-elevated rounded-full overflow-hidden mt-3;
+}
+
+.progress-fill {
+  @apply h-full bg-accent rounded-full transition-all duration-1000 ease-out;
+}
+
+/* Tally bar */
+.tally-bar {
+  @apply w-full h-2 bg-bg-elevated rounded-full overflow-hidden flex;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-bg-primary;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-text-muted/30 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-text-muted/50;
+}
+
+/* Scroll animations */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.animate-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Skip link */
+.skip-link {
+  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-bg-card focus:text-accent focus:px-4 focus:py-2 focus:rounded;
+}

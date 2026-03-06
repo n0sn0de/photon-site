@@ -1,50 +1,74 @@
 # PHOTON — The Fee Token of AtomOne
 
-A comprehensive resource site for Photon, the dedicated fee token of the AtomOne blockchain's dual-token model.
-
-🌐 **Live:** [n0sn0de.github.io/photon-site](https://n0sn0de.github.io/photon-site/)
+A Next.js 14 web application providing real-time data, education, and wallet integration for the PHOTON fee token on the AtomOne blockchain.
 
 ## Features
 
-- **Live Chain Data** — Real-time supply, conversion rate, bonded ATONE, validators (via NosNode LCD)
-- **Mint vs Buy Arbitrage** — Live comparison of minting cost vs Osmosis DEX market price
-- **Conversion Rate Simulator** — Interactive chart showing rate decay over time with adjustable parameters
-- **Source Code Explainer** — Annotated Go code from the `x/photon` module
-- **Constitution Section** — Article 3, Section 5 excerpt on PHOTON's constitutional mandate
-- **Governance History** — Live proposals from `atomone/gov/v1` with vote tallies
-- **Validator Leaderboard** — Top 20 validators by voting power with Nakamoto coefficient
-- **Community Treasury** — Live pool balances with USD estimates
-- **Dynamic Fee Module** — AIMD EIP-1559 mechanism explainer
-- **Nakamoto Bonus** — Decentralization incentive explanation
-- **How to Mint Guide** — Step-by-step for GUI, dApp, and CLI
-- **FAQ** — 10 common questions with accordion UI
-- **Burn Calculator** — Instant ATONE → PHOTON conversion estimate
-- **Chain Status Bar** — Live block height, chain-id, block time
+- **Live Chain Data** — SSR-cached supply, staking pool, conversion rate, and block info via NosNode LCD endpoints
+- **Mint vs Buy Arbitrage** — Real-time comparison of minting cost (burning ATONE) vs market price on Osmosis DEX
+- **Conversion Calculator** — Interactive tool to estimate PHOTON received for a given ATONE burn amount
+- **Governance Dashboard** — Live proposals from `atomone/gov/v1` with vote tally bars and status badges
+- **Validator Leaderboard** — Top validators by voting power with Nakamoto coefficient calculation
+- **Community Treasury** — Pool balances with USD estimates from CoinGecko
+- **Wallet Integration** — Connect Keplr or Leap to mint PHOTON directly via `MsgMintPhoton`
+- **Token Mechanics** — Educational content on the dual-token model, constitution, dynamic fees, and Nakamoto bonus
+- **FAQ** — Accordion with common PHOTON questions
 
-## Stack
+## Tech Stack
 
-Pure HTML/CSS/JS — zero build step, zero dependencies.
+- **Framework:** Next.js 14 (App Router, SSR with `revalidate`)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Testing:** vitest + @testing-library/react + @testing-library/jest-dom
+- **Wallet:** CosmJS (@cosmjs/stargate) + Keplr/Leap direct integration
+- **Data Sources:** AtomOne LCD (NosNode), CoinGecko API
 
-- **Design:** Dark cosmos aesthetic with amber/gold photon energy accents
-- **Typography:** Instrument Serif + Manrope + DM Mono
-- **Data:** NosNode LCD endpoints (our infra, no rate limits) + CoinGecko API
-- **Performance:** Lazy-loaded API sections, IntersectionObserver animations
-- **Accessibility:** Skip-to-content, ARIA labels, keyboard navigation, focus-visible
+## Getting Started
 
-## Deployment
+```bash
+npm install
+npm run dev
+```
 
-Deployed automatically via GitHub Pages on push to `main`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Data Sources
+## Testing
 
-| Data | Source |
-|------|--------|
-| Chain supply, staking, validators | [NosNode LCD](https://atomone-lcd.nosnode.com/swagger/) |
-| Conversion rate | `atomone/photon/v1/conversion_rate` |
-| Governance proposals | `atomone/gov/v1/proposals` |
-| Price data | [CoinGecko API](https://www.coingecko.com/) |
-| Block info | `cosmos/base/tendermint/v1beta1/blocks/latest` |
+```bash
+npm test          # Run all tests
+npm run test:watch  # Watch mode
+```
 
-## Built by
+## Build
 
-[n0sn0de](https://github.com/n0sn0de) — an independent community resource. Not affiliated with All in Bits or AtomOne governance.
+```bash
+npm run build
+npm start
+```
+
+## Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Hero + live stats summary |
+| `/data` | Full dashboard with arbitrage indicator + calculator |
+| `/mechanics` | Dual-token model, constitution, dynamic fees, Nakamoto bonus |
+| `/governance` | Live proposals with vote tallies |
+| `/validators` | Validator leaderboard + Nakamoto coefficient |
+| `/treasury` | Community pool balances |
+| `/mint` | Wallet connection + on-chain PHOTON minting |
+| `/faq` | FAQ accordion |
+
+## API Endpoints
+
+- LCD: `https://atomone-lcd.nosnode.com`
+- RPC: `https://atomone-rpc.nosnode.com`
+- Chain: `atomone-1`
+
+## License
+
+MIT
+
+---
+
+Chain data via [NosNode](https://nosnode.com). Built by [n0sn0de](https://github.com/n0sn0de).
