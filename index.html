@@ -4,7 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHOTON — The Fee Token of AtomOne</title>
-    <meta name="description" content="Explore Photon, the dedicated fee token of the AtomOne blockchain. Live chain data, token mechanics, burn analytics, and the dual-token model explained.">
+    <meta name="description" content="Explore Photon, the dedicated fee token of the AtomOne blockchain. Live chain data, mint vs buy arbitrage, conversion rate simulator, and the dual-token model explained.">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="PHOTON — The Fee Token of AtomOne">
+    <meta property="og:description" content="Live chain data, mint vs buy arbitrage indicator, conversion rate simulator, and deep dives into AtomOne's dual-token architecture.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://n0sn0de.github.io/photon-site/">
+    <meta property="og:image" content="https://n0sn0de.github.io/photon-site/og-image.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PHOTON — The Fee Token of AtomOne">
+    <meta name="twitter:description" content="Live chain data, arbitrage signals, and the dual-token thesis explained.">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -21,12 +34,18 @@
             <span class="logo-icon">◎</span>
             <span class="logo-text">PHOTON</span>
         </div>
-        <div class="nav-links">
+        <div class="nav-links" id="nav-links">
             <a href="#mechanics">Mechanics</a>
             <a href="#live-data">Live Data</a>
+            <a href="#arbitrage">Mint vs Buy</a>
+            <a href="#simulator">Simulator</a>
             <a href="#dual-token">Dual Token</a>
+            <a href="#source-code">Source</a>
             <a href="#resources">Resources</a>
         </div>
+        <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
     </nav>
 
     <!-- Hero Section -->
@@ -334,6 +353,244 @@
                 </div>
             </div>
             <p class="calc-disclaimer">⚠️ This is an estimate based on the current conversion rate. The actual rate may differ at transaction time. Burning ATONE is irreversible.</p>
+        </div>
+    </section>
+
+    <!-- Mint vs Buy Arbitrage Section -->
+    <section class="section" id="arbitrage">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Arbitrage</span>
+                <h2 class="section-title">Mint or buy?</h2>
+                <p class="section-desc">Compare the cost of minting PHOTON (burning ATONE on-chain) versus buying PHOTON on Osmosis DEX. Prices from CoinGecko.</p>
+            </div>
+
+            <div class="arb-signal-container">
+                <div class="arb-signal" id="arb-signal">
+                    <div class="arb-signal-icon" id="arb-signal-icon">⏳</div>
+                    <div class="arb-signal-text">
+                        <div class="arb-signal-action" id="arb-signal-action">Loading...</div>
+                        <div class="arb-signal-reason" id="arb-signal-reason">Fetching price data from CoinGecko & chain</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arb-grid">
+                <div class="arb-card arb-mint">
+                    <div class="arb-card-label">🔥 Mint (Burn ATONE)</div>
+                    <div class="arb-card-price" id="arb-mint-price">—</div>
+                    <div class="arb-card-sub">cost per PHOTON</div>
+                    <div class="arb-card-detail">
+                        <span class="arb-detail-label">ATONE Price</span>
+                        <span class="arb-detail-value" id="arb-atone-price">—</span>
+                    </div>
+                    <div class="arb-card-detail">
+                        <span class="arb-detail-label">Conversion Rate</span>
+                        <span class="arb-detail-value" id="arb-conv-rate">—</span>
+                    </div>
+                    <div class="arb-card-detail">
+                        <span class="arb-detail-label">Formula</span>
+                        <span class="arb-detail-value arb-formula">ATONE$ ÷ rate</span>
+                    </div>
+                </div>
+
+                <div class="arb-vs">
+                    <div class="arb-vs-line"></div>
+                    <div class="arb-vs-badge" id="arb-diff-badge">—</div>
+                    <div class="arb-vs-line"></div>
+                </div>
+
+                <div class="arb-card arb-buy">
+                    <div class="arb-card-label">💱 Buy on Osmosis</div>
+                    <div class="arb-card-price" id="arb-buy-price">—</div>
+                    <div class="arb-card-sub">market price per PHOTON</div>
+                    <div class="arb-card-detail">
+                        <span class="arb-detail-label">PHOTON Price</span>
+                        <span class="arb-detail-value" id="arb-photon-price">—</span>
+                    </div>
+                    <div class="arb-card-detail">
+                        <span class="arb-detail-label">24h Change</span>
+                        <span class="arb-detail-value" id="arb-24h-change">—</span>
+                    </div>
+                    <div class="arb-card-detail">
+                        <span class="arb-detail-label">Market Cap</span>
+                        <span class="arb-detail-value" id="arb-mcap">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arb-explainer">
+                <h4>How the arbitrage works</h4>
+                <p>When minting is cheaper than buying, arbitrageurs can burn ATONE → mint PHOTON → sell on Osmosis for profit. This increases PHOTON supply and DEX selling pressure, pushing the market price down toward the mint cost.</p>
+                <p>When buying is cheaper than minting, traders buy PHOTON on Osmosis instead of burning ATONE. This reduces minting activity, slowing supply growth and letting the market find equilibrium.</p>
+                <p>Over time, these forces keep the market price loosely anchored to the mint cost — though they can diverge based on demand, speculation, and liquidity.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Conversion Rate Simulator -->
+    <section class="section section-dark" id="simulator">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Interactive</span>
+                <h2 class="section-title">Rate decay simulator</h2>
+                <p class="section-desc">The conversion rate decreases as more PHOTON is minted and as ATONE inflates. Drag the sliders to see how the rate evolves.</p>
+            </div>
+
+            <div class="sim-container">
+                <div class="sim-controls">
+                    <div class="sim-control">
+                        <label for="sim-photon-pct">PHOTON Minted</label>
+                        <div class="sim-slider-wrap">
+                            <input type="range" id="sim-photon-pct" min="0" max="95" step="0.5" value="7.4">
+                            <span class="sim-slider-value" id="sim-photon-pct-val">7.4%</span>
+                        </div>
+                        <div class="sim-slider-labels">
+                            <span>0%</span>
+                            <span>Current ▲</span>
+                            <span>95%</span>
+                        </div>
+                    </div>
+                    <div class="sim-control">
+                        <label for="sim-inflation">ATONE Inflation Rate</label>
+                        <div class="sim-slider-wrap">
+                            <input type="range" id="sim-inflation" min="7" max="20" step="0.5" value="20">
+                            <span class="sim-slider-value" id="sim-inflation-val">20%</span>
+                        </div>
+                        <div class="sim-slider-labels">
+                            <span>7% min</span>
+                            <span>Current ▲</span>
+                            <span>20% max</span>
+                        </div>
+                    </div>
+                    <div class="sim-control">
+                        <label for="sim-years">Years Forward</label>
+                        <div class="sim-slider-wrap">
+                            <input type="range" id="sim-years" min="1" max="20" step="1" value="5">
+                            <span class="sim-slider-value" id="sim-years-val">5 years</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sim-chart-container">
+                    <canvas id="sim-chart" width="800" height="350"></canvas>
+                </div>
+
+                <div class="sim-results">
+                    <div class="sim-result">
+                        <span class="sim-result-label">Current Rate</span>
+                        <span class="sim-result-value" id="sim-current-rate">—</span>
+                    </div>
+                    <div class="sim-result">
+                        <span class="sim-result-label">Projected Rate</span>
+                        <span class="sim-result-value" id="sim-projected-rate">—</span>
+                    </div>
+                    <div class="sim-result">
+                        <span class="sim-result-label">Rate Change</span>
+                        <span class="sim-result-value" id="sim-rate-change">—</span>
+                    </div>
+                    <div class="sim-result">
+                        <span class="sim-result-label">Projected ATONE Supply</span>
+                        <span class="sim-result-value" id="sim-atone-proj">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="sim-disclaimer">This simulator models rate decay from ATONE inflation only. Actual rate depends on how much PHOTON is minted (burning ATONE reduces supply, partially offsetting inflation). The interplay between burning and inflation makes exact prediction impossible — this shows the general trajectory.</p>
+        </div>
+    </section>
+
+    <!-- Source Code Section -->
+    <section class="section" id="source-code">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Under the Hood</span>
+                <h2 class="section-title">The actual code</h2>
+                <p class="section-desc">From <a href="https://github.com/atomone-hub/atomone/tree/main/x/photon" target="_blank">x/photon</a> — the Go module that runs it all. No magic, just math.</p>
+            </div>
+
+            <div class="code-cards">
+                <div class="code-card">
+                    <div class="code-card-header">
+                        <span class="code-card-file">keeper.go</span>
+                        <span class="code-card-label">Conversion Rate Function</span>
+                    </div>
+                    <pre class="code-block"><code><span class="code-comment">// PhotonConversionRate returns the conversion rate for</span>
+<span class="code-comment">// converting bond denom to photon.</span>
+<span class="code-comment">// NOTE: bondDenomSupply cannot be zero when the chain is</span>
+<span class="code-comment">// producing blocks — validators must have staked bond denom.</span>
+<span class="code-keyword">func</span> (k Keeper) <span class="code-fn">PhotonConversionRate</span>(
+    _ context.Context,
+    bondDenomSupply, uphotonSupply math.LegacyDec,
+) math.LegacyDec {
+    remainMintable := math.LegacyNewDec(<span class="code-const">MaxSupply</span>).Sub(uphotonSupply)
+    <span class="code-keyword">if</span> remainMintable.IsNegative() {
+        <span class="code-keyword">return</span> math.LegacyZeroDec()
+    }
+    <span class="code-keyword">return</span> remainMintable.Quo(bondDenomSupply)
+}</code></pre>
+                    <div class="code-annotation">
+                        <p>The formula is beautifully simple: <code>rate = (1B − photon_supply) / atone_supply</code></p>
+                        <p>As PHOTON supply grows toward 1B, the numerator shrinks → rate decreases. As ATONE inflates (7-20% annually), the denominator grows → rate decreases. Early minters get more PHOTON per ATONE burned.</p>
+                    </div>
+                </div>
+
+                <div class="code-card">
+                    <div class="code-card-header">
+                        <span class="code-card-file">msg_server.go</span>
+                        <span class="code-card-label">Mint Flow (4 steps)</span>
+                    </div>
+                    <pre class="code-block"><code><span class="code-comment">// MintPhoton implements the MsgServer.MintPhoton method.</span>
+<span class="code-keyword">func</span> (k msgServer) <span class="code-fn">MintPhoton</span>(goCtx context.Context,
+    msg *types.MsgMintPhoton,
+) (*types.MsgMintPhotonResponse, error) {
+
+    <span class="code-comment">// Compute photons to mint using current rate</span>
+    conversionRate := k.PhotonConversionRate(ctx,
+        bondDenomSupply, uphotonSupply)
+    uphotonToMint := bondDenomToBurn.Amount.
+        ToLegacyDec().Mul(conversionRate).TruncateInt()
+
+    <span class="code-comment">// The atomic 4-step swap:</span>
+    <span class="code-step">// 1)</span> Send ATONE from user → photon module
+    k.bankKeeper.SendCoinsFromAccountToModule(...)
+
+    <span class="code-step">// 2)</span> Burn the ATONE (permanently destroyed)
+    k.bankKeeper.BurnCoins(ctx, types.ModuleName, coinsToBurn)
+
+    <span class="code-step">// 3)</span> Mint fresh PHOTON into module
+    k.bankKeeper.MintCoins(ctx, types.ModuleName, coinsToMint)
+
+    <span class="code-step">// 4)</span> Send PHOTON from module → user
+    k.bankKeeper.SendCoinsFromModuleToAccount(...)
+}</code></pre>
+                    <div class="code-annotation">
+                        <p>All four steps happen atomically in a single transaction. If any step fails, the entire operation reverts — your ATONE is safe. The <code>MsgMintPhoton</code> transaction type is fee-exempt by default, so you don't need PHOTON to mint your first PHOTON.</p>
+                    </div>
+                </div>
+
+                <div class="code-card">
+                    <div class="code-card-header">
+                        <span class="code-card-file">params.go</span>
+                        <span class="code-card-label">Module Parameters</span>
+                    </div>
+                    <pre class="code-block"><code><span class="code-keyword">const</span> (
+    defaultMintDisabled = <span class="code-const">false</span>
+)
+
+<span class="code-comment">// MsgMintPhoton is fee-exempt so users can mint</span>
+<span class="code-comment">// their first PHOTON without already having PHOTON</span>
+<span class="code-keyword">var</span> defaultTxFeeExceptions = []string{
+    <span class="code-string">"/atomone.photon.v1.MsgMintPhoton"</span>,
+}
+
+<span class="code-comment">// MaxSupply is the hard cap (in micro-photon units)</span>
+MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="code-comment">// 1B × 10⁶</span></code></pre>
+                    <div class="code-annotation">
+                        <p>Two key governance-controlled parameters: <code>MintDisabled</code> can pause minting via governance vote, and <code>TxFeeExceptions</code> lists message types that don't require fee payment. Currently only <code>MsgMintPhoton</code> is exempt — a clever bootstrap mechanism.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
