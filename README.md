@@ -1,50 +1,50 @@
-# ◎ PHOTON — The Fee Token of AtomOne
+# PHOTON — The Fee Token of AtomOne
 
-The definitive resource for **Photon**, the dedicated fee token of the [AtomOne](https://atom.one) blockchain's dual-token model.
+A comprehensive resource site for Photon, the dedicated fee token of the AtomOne blockchain's dual-token model.
 
-## What Is This?
+🌐 **Live:** [n0sn0de.github.io/photon-site](https://n0sn0de.github.io/photon-site/)
 
-A single-page website covering everything about Photon:
+## Features
 
-- **Live Chain Data** — Real-time supply, conversion rate, staking stats pulled from [NosNode](https://nosnode.com) LCD endpoints
-- **Token Mechanics** — How the ATONE → PHOTON one-way burn works, the math behind the conversion rate
-- **Dual Token Model** — Why separating staking from fees matters for IBC hub security
-- **Burn Calculator** — Interactive tool to estimate PHOTON received for burning ATONE
-- **Origin Story** — Timeline from the 2019 Cosmos multi-token proposal to AtomOne's launch
-- **Ecosystem Resources** — Links to governance, staking, explorers, and community
+- **Live Chain Data** — Real-time supply, conversion rate, bonded ATONE, validators (via NosNode LCD)
+- **Mint vs Buy Arbitrage** — Live comparison of minting cost vs Osmosis DEX market price
+- **Conversion Rate Simulator** — Interactive chart showing rate decay over time with adjustable parameters
+- **Source Code Explainer** — Annotated Go code from the `x/photon` module
+- **Constitution Section** — Article 3, Section 5 excerpt on PHOTON's constitutional mandate
+- **Governance History** — Live proposals from `atomone/gov/v1` with vote tallies
+- **Validator Leaderboard** — Top 20 validators by voting power with Nakamoto coefficient
+- **Community Treasury** — Live pool balances with USD estimates
+- **Dynamic Fee Module** — AIMD EIP-1559 mechanism explainer
+- **Nakamoto Bonus** — Decentralization incentive explanation
+- **How to Mint Guide** — Step-by-step for GUI, dApp, and CLI
+- **FAQ** — 10 common questions with accordion UI
+- **Burn Calculator** — Instant ATONE → PHOTON conversion estimate
+- **Chain Status Bar** — Live block height, chain-id, block time
 
-## Tech Stack
+## Stack
 
-Zero build step. Pure HTML/CSS/JS.
+Pure HTML/CSS/JS — zero build step, zero dependencies.
 
-- **Fonts:** Instrument Serif, Manrope, DM Mono
-- **Data:** AtomOne LCD API via `atomone-lcd.nosnode.com`
-- **Design:** Dark cosmos aesthetic with photon amber/gold accents
+- **Design:** Dark cosmos aesthetic with amber/gold photon energy accents
+- **Typography:** Instrument Serif + Manrope + DM Mono
+- **Data:** NosNode LCD endpoints (our infra, no rate limits) + CoinGecko API
+- **Performance:** Lazy-loaded API sections, IntersectionObserver animations
+- **Accessibility:** Skip-to-content, ARIA labels, keyboard navigation, focus-visible
 
-## Run Locally
+## Deployment
 
-```bash
-# Any static file server works
-python3 -m http.server 8080
-# or
-npx serve .
-```
+Deployed automatically via GitHub Pages on push to `main`.
 
-## Deploy
+## Data Sources
 
-Drop the files on any static host — Vercel, Netlify, GitHub Pages, Caddy, Nginx, whatever.
+| Data | Source |
+|------|--------|
+| Chain supply, staking, validators | [NosNode LCD](https://atomone-lcd.nosnode.com/swagger/) |
+| Conversion rate | `atomone/photon/v1/conversion_rate` |
+| Governance proposals | `atomone/gov/v1/proposals` |
+| Price data | [CoinGecko API](https://www.coingecko.com/) |
+| Block info | `cosmos/base/tendermint/v1beta1/blocks/latest` |
 
-## Data Endpoints
+## Built by
 
-All data comes from NosNode's AtomOne infrastructure:
-
-| Endpoint | Data |
-|----------|------|
-| `/cosmos/bank/v1beta1/supply` | ATONE + PHOTON supply |
-| `/atomone/photon/v1/conversion_rate` | Current burn rate |
-| `/cosmos/staking/v1beta1/pool` | Bonded/unbonded tokens |
-| `/cosmos/staking/v1beta1/validators` | Active validator count |
-
-## License
-
-MIT — Built by [n0sn0de](https://github.com/n0sn0de)
+[n0sn0de](https://github.com/n0sn0de) — an independent community resource. Not affiliated with All in Bits or AtomOne governance.

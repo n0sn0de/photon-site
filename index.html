@@ -26,11 +26,14 @@
     <link rel="apple-touch-icon" href="assets/photon-token-round.png">
 </head>
 <body>
+    <!-- Skip to content (a11y) -->
+    <a href="#live-data" class="skip-link">Skip to content</a>
+    
     <!-- Grain overlay -->
     <div class="grain"></div>
     
     <!-- Navigation -->
-    <nav class="nav">
+    <nav class="nav" role="navigation" aria-label="Main navigation">
         <a href="#" class="nav-logo">
             <img src="assets/photon-token-round.svg" alt="Photon" class="logo-icon-img">
             <span class="logo-text">PHOTON</span>
@@ -45,6 +48,8 @@
             <a href="#governance">Governance</a>
             <a href="#validators">Validators</a>
             <a href="#treasury">Treasury</a>
+            <a href="#how-to-mint">How to Mint</a>
+            <a href="#faq">FAQ</a>
             <a href="#resources">Resources</a>
         </div>
         <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
@@ -809,6 +814,197 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
                         <span class="naka-stat-label">Ideal coefficient (100 validators)</span>
                     </div>
                     <p class="naka-note">Approved via <a href="https://gov.atom.one/proposals/12" target="_blank">Proposal #12</a>. The Nakamoto coefficient measures the minimum validators needed to compromise 33.4% of consensus — the higher, the more decentralized.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How to Mint Section -->
+    <section class="section" id="how-to-mint">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Guide</span>
+                <h2 class="section-title">How to mint PHOTON</h2>
+                <p class="section-desc">Three ways to convert your ATONE into PHOTON. Pick the one that fits your comfort level.</p>
+            </div>
+
+            <div class="mint-methods">
+                <div class="mint-method">
+                    <div class="mint-method-header">
+                        <span class="mint-method-number">Option A</span>
+                        <h3>Nodeist Mint Tool</h3>
+                        <span class="mint-method-tag easy">Easiest</span>
+                    </div>
+                    <div class="mint-method-body">
+                        <ol class="mint-steps">
+                            <li>Go to <a href="https://atomone.ist/mainnet/mint" target="_blank">atomone.ist/mainnet/mint</a></li>
+                            <li>Connect your Keplr wallet (must hold ATONE)</li>
+                            <li>Enter the amount of ATONE to burn</li>
+                            <li>Review the PHOTON you'll receive (shows current rate)</li>
+                            <li>Click <strong>Mint</strong> and approve the transaction in Keplr</li>
+                        </ol>
+                        <div class="mint-tip">
+                            <strong>💡 Tip:</strong> The MsgMintPhoton transaction is fee-exempt — you don't need PHOTON to mint your first PHOTON.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mint-method">
+                    <div class="mint-method-header">
+                        <span class="mint-method-number">Option B</span>
+                        <h3>AtomOne Staking dApp</h3>
+                        <span class="mint-method-tag moderate">Official</span>
+                    </div>
+                    <div class="mint-method-body">
+                        <ol class="mint-steps">
+                            <li>Visit <a href="https://staking.atom.one/" target="_blank">staking.atom.one</a></li>
+                            <li>Connect your wallet</li>
+                            <li>Navigate to the mint/burn section</li>
+                            <li>Enter ATONE amount and confirm the burn</li>
+                            <li>PHOTON arrives in your wallet instantly</li>
+                        </ol>
+                        <div class="mint-tip">
+                            <strong>⚠️ Remember:</strong> Burning ATONE is irreversible. You cannot convert PHOTON back to ATONE at the protocol level.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mint-method">
+                    <div class="mint-method-header">
+                        <span class="mint-method-number">Option C</span>
+                        <h3>CLI (Advanced)</h3>
+                        <span class="mint-method-tag advanced">Power Users</span>
+                    </div>
+                    <div class="mint-method-body">
+                        <pre class="mint-cli"><code><span class="code-comment"># Mint PHOTON by burning 100 ATONE</span>
+atomoned tx photon mint-photon 100000000uatone \
+  --from mykey \
+  --chain-id atomone-1 \
+  --node https://atomone-rpc.nosnode.com:443 \
+  --fees 0uphoton</code></pre>
+                        <div class="mint-tip">
+                            <strong>📝 Note:</strong> Amount is in micro-units (uatone). 1 ATONE = 1,000,000 uatone. Fees are set to 0 because MsgMintPhoton is exempt.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mint-alternative">
+                <h4>💱 Don't want to burn ATONE?</h4>
+                <p>You can also <strong>buy PHOTON directly</strong> on <a href="https://app.osmosis.zone/?from=ATONE&to=PHOTON" target="_blank">Osmosis DEX</a>. Check the <a href="#arbitrage">Mint vs Buy</a> section above to see which option is cheaper right now.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="section section-dark" id="faq">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Common Questions</span>
+                <h2 class="section-title">FAQ</h2>
+                <p class="section-desc">Everything you need to know about PHOTON, the dual-token model, and how it all works.</p>
+            </div>
+
+            <div class="faq-list" role="list">
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-1">
+                        <span>What is PHOTON?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-1" role="region">
+                        <p>PHOTON is the dedicated fee token of the AtomOne blockchain. Every transaction on AtomOne (and eventually all IBC/ICS payments across its shards) requires PHOTON for gas fees. It's created by burning ATONE (the staking token) through a one-way conversion, has a hard cap of 1 billion tokens, and is non-inflationary by design.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-2">
+                        <span>Why does AtomOne need two tokens?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-2" role="region">
+                        <p>Security. When a single token handles both staking and fees, an attacker can buy it on exchanges, accumulate enough to control consensus (⅔ of stake), and manipulate IBC transactions to steal pegged assets. With separated tokens, accumulating fee tokens (PHOTON) gives zero consensus power. Attacking requires acquiring ATONE, which is illiquid by design — no liquid staking derivatives, locked in staking, and subject to slashing.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-3">
+                        <span>How is the conversion rate calculated?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-3" role="region">
+                        <p>The formula is: <code>rate = (1,000,000,000 − photon_supply) / atone_supply</code></p>
+                        <p>This means the rate naturally decreases over time as more PHOTON is minted (numerator shrinks) and as ATONE inflates at 7-20% annually (denominator grows). Early burners get more PHOTON per ATONE. The rate can never reach zero because the max supply can never be fully minted — that would require burning all ATONE, which is impossible while validators stake.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-4">
+                        <span>Can I convert PHOTON back to ATONE?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-4" role="region">
+                        <p>No. The burn is irreversible at the protocol level. ATONE → PHOTON is a one-way gate. This is by design — it ensures the staking token's security properties are never undermined by fee-token holders. However, you can always trade PHOTON for ATONE on decentralized exchanges like Osmosis.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-5">
+                        <span>Do I need PHOTON to mint my first PHOTON?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-5" role="region">
+                        <p>No — and this is a clever bootstrap mechanism. The <code>MsgMintPhoton</code> transaction type is fee-exempt by default. You can burn ATONE to mint PHOTON without paying any fees. Once you have PHOTON, you'll use it for all other transaction types.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-6">
+                        <span>Is PHOTON inflationary?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-6" role="region">
+                        <p>No. PHOTON has a hard cap of 1 billion tokens that can never be exceeded. New PHOTON is only created when someone burns ATONE — there is no inflation, no block rewards in PHOTON, and no other minting mechanism. This makes PHOTON deflationary-leaning over time as tokens are lost to burned wallets, forgotten keys, and rounding dust.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-7">
+                        <span>Where can I buy or trade PHOTON?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-7" role="region">
+                        <p>PHOTON trades on <a href="https://app.osmosis.zone/?from=ATONE&to=PHOTON" target="_blank">Osmosis DEX</a> — the primary decentralized exchange in the Cosmos ecosystem. The main trading pair is PHOTON/ATONE. You can also mint it directly on-chain by burning ATONE — check the <a href="#arbitrage">Mint vs Buy</a> section to see which is cheaper.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-8">
+                        <span>What wallets support PHOTON?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-8" role="region">
+                        <p>Any wallet that supports the AtomOne chain can hold PHOTON. <a href="https://www.keplr.app/" target="_blank">Keplr</a> is the most popular option — it supports AtomOne natively. You can also use <a href="https://www.ledger.com/" target="_blank">Ledger</a> hardware wallets for cold storage via the Cosmos app.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-9">
+                        <span>What happens when PHOTON becomes the exclusive fee token?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-9" role="region">
+                        <p>Currently, AtomOne accepts both ATONE and PHOTON for transaction fees (transition period). A future governance vote will activate PHOTON-only fees — at that point, every transaction on AtomOne and all ICS shards will require PHOTON. This is constitutionally mandated in Article 3, Section 5 and requires a standard governance vote to activate. The MsgMintPhoton transaction will remain fee-exempt to ensure people can always bootstrap their first PHOTON.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" role="listitem">
+                    <button class="faq-question" aria-expanded="false" aria-controls="faq-10">
+                        <span>What is AtomOne's relationship to the Cosmos Hub?</span>
+                        <span class="faq-icon" aria-hidden="true">+</span>
+                    </button>
+                    <div class="faq-answer" id="faq-10" role="region">
+                        <p>AtomOne is a community-driven fork of the Cosmos Hub (Gaia), created after Proposal #848 reduced ATOM inflation. The AtomOne community believed this undermined ATOM's purpose as a security mechanism. AtomOne is not competition — it's a return to the original multi-token architecture proposed in 2019. ATONE was distributed to ATOM holders at the time of the fork, so existing Cosmos stakers received tokens on both chains.</p>
+                    </div>
                 </div>
             </div>
         </div>

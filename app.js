@@ -747,6 +747,67 @@ async function fetchBlockInfo() {
     }
 }
 
+// ===== FAQ Accordion =====
+
+function initFAQ() {
+    const items = document.querySelectorAll('.faq-item');
+    items.forEach(item => {
+        const btn = item.querySelector('.faq-question');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const isOpen = item.classList.contains('open');
+            // Close all others
+            items.forEach(other => {
+                if (other !== item) other.classList.remove('open');
+                const otherBtn = other.querySelector('.faq-question');
+                if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+            });
+            // Toggle this one
+            item.classList.toggle('open', !isOpen);
+            btn.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+        });
+        // Keyboard: Enter/Space
+        btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                btn.click();
+            }
+        });
+    });
+}
+
+// ===== Lazy-load API sections =====
+
+const lazyLoaded = { governance: false, validators: false, treasury: false };
+
+function initLazyLoad() {
+    const lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const id = entry.target.id;
+            if (id === 'governance' && !lazyLoaded.governance) {
+                lazyLoaded.governance = true;
+                fetchGovernance();
+                setInterval(fetchGovernance, 300_000);
+            } else if (id === 'validators' && !lazyLoaded.validators) {
+                lazyLoaded.validators = true;
+                fetchValidators();
+                setInterval(fetchValidators, 300_000);
+            } else if (id === 'treasury' && !lazyLoaded.treasury) {
+                lazyLoaded.treasury = true;
+                fetchTreasury();
+                setInterval(fetchTreasury, 300_000);
+            }
+            lazyObserver.unobserve(entry.target);
+        });
+    }, { rootMargin: '200px 0px' }); // pre-fetch 200px before visible
+
+    ['governance', 'validators', 'treasury'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) lazyObserver.observe(el);
+    });
+}
+
 // ===== Scroll Animations =====
 
 function initScrollAnimations() {
@@ -760,7 +821,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .faq-item'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -788,6 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollAnimations();
     initNavigation();
     initMobileNav();
+    initFAQ();
 
     // Calculator input listener
     document.getElementById('calc-atone').addEventListener('input', updateCalculator);
@@ -802,15 +864,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchPriceData();
     setInterval(fetchPriceData, PRICE_REFRESH);
 
-    // Fetch governance and validators (one-time, with 5min refresh)
-    fetchGovernance();
-    fetchValidators();
-    fetchTreasury();
+    // Lazy-load governance, validators, treasury when scrolled near
+    initLazyLoad();
+
+    // Block info (lightweight, always fetch)
     fetchBlockInfo();
-    setInterval(fetchGovernance, 300_000);
-    setInterval(fetchValidators, 300_000);
-    setInterval(fetchTreasury, 300_000);
-    setInterval(fetchBlockInfo, 10_000); // 10s for block updates
+    setInterval(fetchBlockInfo, 10_000);
     
     // Re-observe new elements after governance/validators load
     setTimeout(() => initScrollAnimations(), 3000);
