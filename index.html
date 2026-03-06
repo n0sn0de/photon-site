@@ -26,8 +26,10 @@
     <link rel="preconnect" href="https://api.coingecko.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="preload" href="app.js" as="script">
     <link rel="icon" type="image/svg+xml" href="assets/photon-token-round.svg">
     <link rel="apple-touch-icon" href="assets/photon-token-round.png">
     
@@ -176,6 +178,7 @@
             <a href="#mechanics">Mechanics</a>
             <a href="#live-data">Live Data</a>
             <a href="#arbitrage">Mint vs Buy</a>
+            <a href="#price-history">Charts</a>
             <a href="#simulator">Simulator</a>
             <a href="#scarcity">Scarcity</a>
             <a href="#fee-estimator">Fees</a>
@@ -184,6 +187,7 @@
             <a href="#governance">Governance</a>
             <a href="#validators">Validators</a>
             <a href="#treasury">Treasury</a>
+            <a href="#ibc-connections">IBC</a>
             <a href="#how-to-mint">How to Mint</a>
             <a href="#faq">FAQ</a>
             <a href="#resources">Resources</a>
@@ -604,7 +608,61 @@
     </section>
 
     <!-- Conversion Rate Simulator -->
-    <section class="section section-dark" id="simulator">
+    <!-- Price History Chart -->
+    <section class="section section-dark" id="price-history">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Market Data</span>
+                <h2 class="section-title">Price history</h2>
+                <p class="section-desc">90-day price chart for PHOTON and ATONE. Data from CoinGecko.</p>
+            </div>
+
+            <div class="price-chart-container">
+                <div class="price-chart-controls">
+                    <div class="price-chart-toggle">
+                        <button class="price-toggle-btn active" data-token="both">Both</button>
+                        <button class="price-toggle-btn" data-token="photon">PHOTON</button>
+                        <button class="price-toggle-btn" data-token="atone">ATONE</button>
+                    </div>
+                    <div class="price-chart-range">
+                        <button class="price-range-btn" data-days="7">7D</button>
+                        <button class="price-range-btn" data-days="30">30D</button>
+                        <button class="price-range-btn active" data-days="90">90D</button>
+                    </div>
+                </div>
+                <div class="price-chart-wrapper">
+                    <canvas id="price-chart" width="900" height="400"></canvas>
+                    <div class="price-chart-tooltip" id="price-tooltip" style="display:none;">
+                        <div class="price-tooltip-date" id="tooltip-date"></div>
+                        <div class="price-tooltip-row photon-row" id="tooltip-photon"></div>
+                        <div class="price-tooltip-row atone-row" id="tooltip-atone"></div>
+                    </div>
+                </div>
+                <div class="price-chart-summary">
+                    <div class="price-summary-item">
+                        <span class="price-summary-dot photon-dot"></span>
+                        <span class="price-summary-label">PHOTON</span>
+                        <span class="price-summary-value" id="price-photon-current">—</span>
+                        <span class="price-summary-change" id="price-photon-change">—</span>
+                    </div>
+                    <div class="price-summary-item">
+                        <span class="price-summary-dot atone-dot"></span>
+                        <span class="price-summary-label">ATONE</span>
+                        <span class="price-summary-value" id="price-atone-current">—</span>
+                        <span class="price-summary-change" id="price-atone-change">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-source" style="margin-top: 2rem;">
+                <span class="data-source-dot"></span>
+                Prices from <a href="https://www.coingecko.com/" target="_blank">CoinGecko</a> — updates every 60s
+            </div>
+        </div>
+    </section>
+
+    <!-- Conversion Rate Simulator -->
+    <section class="section" id="simulator">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Interactive</span>
@@ -1058,7 +1116,45 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
     </section>
 
     <!-- Dynamic Fee Module -->
-    <section class="section" id="dynamic-fees">
+    <!-- IBC Connections -->
+    <section class="section" id="ibc-connections">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Interchain</span>
+                <h2 class="section-title">IBC connections</h2>
+                <p class="section-desc">AtomOne's bridges to the Cosmos ecosystem. Every connection is a pathway for PHOTON to flow across chains.</p>
+            </div>
+
+            <div class="ibc-grid" id="ibc-grid">
+                <div class="ibc-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div></div>
+                <div class="ibc-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div></div>
+                <div class="ibc-card skeleton"><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div></div>
+            </div>
+
+            <div class="ibc-summary" id="ibc-summary">
+                <div class="ibc-summary-stat">
+                    <span class="ibc-summary-value" id="ibc-total-channels">—</span>
+                    <span class="ibc-summary-label">Total Channels</span>
+                </div>
+                <div class="ibc-summary-stat">
+                    <span class="ibc-summary-value" id="ibc-open-channels">—</span>
+                    <span class="ibc-summary-label">Open Channels</span>
+                </div>
+                <div class="ibc-summary-stat">
+                    <span class="ibc-summary-value" id="ibc-connected-chains">—</span>
+                    <span class="ibc-summary-label">Connected Chains</span>
+                </div>
+            </div>
+
+            <div class="data-source" style="margin-top: 2rem;">
+                <span class="data-source-dot"></span>
+                From <a href="https://atomone-lcd.nosnode.com/swagger/" target="_blank">NosNode LCD</a> — <code>ibc/core/channel/v1</code>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dynamic Fee Module -->
+    <section class="section section-dark" id="dynamic-fees">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Fee Economics</span>
@@ -1091,7 +1187,7 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
     </section>
 
     <!-- Nakamoto Bonus Explainer -->
-    <section class="section section-dark" id="nakamoto-bonus">
+    <section class="section" id="nakamoto-bonus">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Decentralization Incentive</span>

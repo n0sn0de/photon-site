@@ -3250,3 +3250,451 @@ input:focus:not(:focus-visible) {
         height: 180px;
     }
 }
+
+/* ============================================
+   SESSION 8: Historical Price Chart
+   ============================================ */
+
+.price-chart-container {
+    max-width: 950px;
+    margin: 0 auto;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.price-chart-container.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.price-chart-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.price-chart-toggle,
+.price-chart-range {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.price-toggle-btn,
+.price-range-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.price-toggle-btn:hover,
+.price-range-btn:hover {
+    color: var(--text-secondary);
+    background: rgba(212, 160, 57, 0.05);
+}
+
+.price-toggle-btn.active,
+.price-range-btn.active {
+    color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.price-chart-wrapper {
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.price-chart-wrapper canvas {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+}
+
+.price-chart-tooltip {
+    position: absolute;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-accent);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    pointer-events: none;
+    z-index: 10;
+    min-width: 180px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.price-tooltip-date {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.price-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.15rem 0;
+}
+
+.price-tooltip-row.photon-row { color: var(--accent); }
+.price-tooltip-row.atone-row { color: var(--atone); }
+
+.price-chart-summary {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.price-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+}
+
+.price-summary-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.price-summary-dot.photon-dot { background: var(--accent); }
+.price-summary-dot.atone-dot { background: var(--atone); }
+
+.price-summary-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.price-summary-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.price-summary-change {
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   SESSION 8: Validator Detail Expansion
+   ============================================ */
+
+.val-detail {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.4s ease;
+}
+
+.val-row-expandable {
+    cursor: pointer;
+    position: relative;
+}
+
+.val-expand-hint {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    transition: transform 0.3s, color 0.3s;
+    pointer-events: none;
+}
+
+.val-row-expandable.expanded .val-expand-hint {
+    color: var(--accent);
+}
+
+.val-detail-inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(212, 160, 57, 0.02);
+}
+
+.val-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.val-detail-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+}
+
+.val-detail-value {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.val-detail-desc {
+    grid-column: 1 / -1;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-height: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.val-row-expandable:hover {
+    background: rgba(212, 160, 57, 0.04);
+}
+
+/* ============================================
+   SESSION 8: IBC Connections
+   ============================================ */
+
+.ibc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.ibc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s ease;
+}
+
+.ibc-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ibc-card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+}
+
+.ibc-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ibc-chain-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-elevated);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+
+.ibc-chain-name {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.ibc-chain-id {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.ibc-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ibc-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.ibc-detail-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.ibc-detail-value {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.ibc-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.ibc-status-open {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.ibc-status-closed {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.ibc-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.ibc-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.ibc-summary-stat {
+    text-align: center;
+    padding: 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.ibc-summary-value {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+}
+
+.ibc-summary-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Session 8 scroll animations */
+.ibc-grid,
+.ibc-summary {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.ibc-grid.visible,
+.ibc-summary.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===== Session 8 Mobile ===== */
+@media (max-width: 768px) {
+    .price-chart-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .price-chart-toggle,
+    .price-chart-range {
+        justify-content: center;
+    }
+    
+    .price-chart-wrapper {
+        padding: 1rem 0.5rem;
+    }
+    
+    .price-chart-summary {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .ibc-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .ibc-summary {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .val-detail-inner {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .val-expand-hint {
+        display: none;
+    }
+}
+
+/* ===== Session 8 Light Mode ===== */
+[data-theme="light"] .price-chart-wrapper {
+    background: #ffffff;
+}
+
+[data-theme="light"] .price-chart-tooltip {
+    background: #ffffff;
+    border-color: rgba(184, 137, 47, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .val-detail-inner {
+    background: rgba(184, 137, 47, 0.03);
+}
+
+[data-theme="light"] .ibc-chain-icon {
+    background: var(--bg-secondary);
+}

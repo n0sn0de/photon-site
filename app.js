@@ -790,7 +790,7 @@ function initFAQ() {
 
 // ===== Lazy-load API sections =====
 
-const lazyLoaded = { governance: false, validators: false, treasury: false };
+const lazyLoaded = { governance: false, validators: false, treasury: false, priceHistory: false, ibcConnections: false };
 
 function initLazyLoad() {
     const lazyObserver = new IntersectionObserver((entries) => {
@@ -809,12 +809,18 @@ function initLazyLoad() {
                 lazyLoaded.treasury = true;
                 fetchTreasury();
                 setInterval(fetchTreasury, 300_000);
+            } else if (id === 'price-history' && !lazyLoaded.priceHistory) {
+                lazyLoaded.priceHistory = true;
+                initPriceChart();
+            } else if (id === 'ibc-connections' && !lazyLoaded.ibcConnections) {
+                lazyLoaded.ibcConnections = true;
+                fetchIBCConnections();
             }
             lazyObserver.unobserve(entry.target);
         });
-    }, { rootMargin: '200px 0px' }); // pre-fetch 200px before visible
+    }, { rootMargin: '200px 0px' });
 
-    ['governance', 'validators', 'treasury'].forEach(id => {
+    ['governance', 'validators', 'treasury', 'price-history', 'ibc-connections'].forEach(id => {
         const el = document.getElementById(id);
         if (el) lazyObserver.observe(el);
     });
@@ -833,7 +839,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .scarcity-container, .fee-container, .fee-result-card, .fee-context, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-card-accordion, .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .mint-flow-canvas, .faq-item'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .scarcity-container, .fee-container, .fee-result-card, .fee-context, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-card-accordion, .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact, .mint-method, .mint-alternative, .mint-flow-canvas, .faq-item, .price-chart-container, .ibc-card:not(.skeleton), .ibc-grid, .ibc-summary'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -878,6 +884,7 @@ function initThemeToggle() {
         // Redraw canvases with appropriate colors
         drawSimulator();
         drawScarcityModel();
+        if (typeof drawPriceChart === 'function' && priceChartData.photon.length) drawPriceChart();
     });
     
     // Listen for system preference changes (only if no manual override)
@@ -886,6 +893,7 @@ function initThemeToggle() {
             document.documentElement.setAttribute('data-theme', e.matches ? 'light' : 'dark');
             drawSimulator();
             drawScarcityModel();
+            if (typeof drawPriceChart === 'function' && priceChartData.photon.length) drawPriceChart();
         }
     });
 }
@@ -1464,6 +1472,459 @@ function updateFeeEstimator() {
         : pctSupply.toFixed(2) + '%';
 }
 
+// ===== Historical Price Chart =====
+
+let priceChartData = { photon: [], atone: [] };
+let priceChartState = { show: 'both', days: 90, hoveredIndex: -1 };
+
+async function fetchPriceHistory(days) {
+    try {
+        const [photonRes, atoneRes] = await Promise.allSettled([
+            fetch(`${COINGECKO_API}/coins/photon-2/market_chart?vs_currency=usd&days=${days}`).then(r => r.json()),
+            fetch(`${COINGECKO_API}/coins/atomone/market_chart?vs_currency=usd&days=${days}`).then(r => r.json()),
+        ]);
+        if (photonRes.status === 'fulfilled' && photonRes.value.prices)
+            priceChartData.photon = photonRes.value.prices;
+        if (atoneRes.status === 'fulfilled' && atoneRes.value.prices)
+            priceChartData.atone = atoneRes.value.prices;
+        updatePriceSummary();
+        drawPriceChart();
+    } catch (err) {
+        console.error('Price history fetch failed:', err);
+    }
+}
+
+function updatePriceSummary() {
+    [['photon', priceChartData.photon], ['atone', priceChartData.atone]].forEach(([token, data]) => {
+        if (data.length < 2) return;
+        const current = data[data.length - 1][1];
+        const first = data[0][1];
+        const change = ((current - first) / first * 100);
+        document.getElementById(`price-${token}-current`).textContent = '$' + current.toFixed(4);
+        const el = document.getElementById(`price-${token}-change`);
+        el.textContent = (change >= 0 ? '+' : '') + change.toFixed(1) + '%';
+        el.style.color = change >= 0 ? '#4ade80' : '#f87171';
+    });
+}
+
+function drawPriceChart() {
+    const canvas = document.getElementById('price-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const w = rect.width - 48, h = 350;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+
+    const padL = 70, padR = 70, padT = 25, padB = 40;
+    const cW = w - padL - padR, cH = h - padT - padB;
+    const colors = getChartColors();
+    const showP = priceChartState.show === 'both' || priceChartState.show === 'photon';
+    const showA = priceChartState.show === 'both' || priceChartState.show === 'atone';
+    const photon = showP ? priceChartData.photon : [];
+    const atone = showA ? priceChartData.atone : [];
+
+    if (!photon.length && !atone.length) {
+        ctx.fillStyle = colors.labelColor;
+        ctx.font = '13px "DM Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('Loading price data...', w / 2, h / 2);
+        return;
+    }
+
+    const allTimes = [...photon.map(p => p[0]), ...atone.map(p => p[0])];
+    const minTime = Math.min(...allTimes), maxTime = Math.max(...allTimes);
+    const timeRange = maxTime - minTime || 1;
+    const dual = showP && showA && priceChartState.show === 'both';
+
+    function minmax(data) {
+        const prices = data.map(p => p[1]);
+        return [Math.min(...prices) * 0.95, Math.max(...prices) * 1.05];
+    }
+    let pMin, pMax, aMin, aMax;
+    if (photon.length) [pMin, pMax] = minmax(photon);
+    if (atone.length) [aMin, aMax] = minmax(atone);
+
+    // Grid
+    ctx.strokeStyle = colors.gridLine; ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = padT + (cH / 5) * i;
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + cW, y); ctx.stroke();
+    }
+
+    // Y-axis labels
+    ctx.font = '10px "DM Mono", monospace';
+    if (dual) {
+        ctx.fillStyle = '#d4a039'; ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            const v = pMax - (pMax - pMin) * (i / 5);
+            ctx.fillText('$' + v.toFixed(4), padL - 8, padT + (cH / 5) * i + 4);
+        }
+        ctx.fillStyle = '#6b8acd'; ctx.textAlign = 'left';
+        for (let i = 0; i <= 5; i++) {
+            const v = aMax - (aMax - aMin) * (i / 5);
+            ctx.fillText('$' + v.toFixed(4), padL + cW + 8, padT + (cH / 5) * i + 4);
+        }
+    } else {
+        const [sMin, sMax] = photon.length ? [pMin, pMax] : [aMin, aMax];
+        ctx.fillStyle = photon.length ? '#d4a039' : '#6b8acd'; ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            const v = sMax - (sMax - sMin) * (i / 5);
+            ctx.fillText('$' + v.toFixed(4), padL - 8, padT + (cH / 5) * i + 4);
+        }
+    }
+
+    // X-axis labels
+    ctx.fillStyle = colors.labelColor; ctx.textAlign = 'center';
+    const nLab = priceChartState.days <= 7 ? 7 : 6;
+    for (let i = 0; i <= nLab; i++) {
+        const t = minTime + (timeRange / nLab) * i;
+        const x = padL + (i / nLab) * cW;
+        ctx.fillText(new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), x, h - 8);
+    }
+
+    function toXY(data, yMin, yMax) {
+        return data.map(([t, p]) => ({
+            x: padL + ((t - minTime) / timeRange) * cW,
+            y: padT + cH - ((p - yMin) / (yMax - yMin)) * cH, time: t, price: p,
+        }));
+    }
+
+    function drawLine(pts, color, fillAlpha) {
+        if (pts.length < 2) return;
+        ctx.beginPath();
+        pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+        ctx.lineTo(pts[pts.length - 1].x, padT + cH); ctx.lineTo(pts[0].x, padT + cH); ctx.closePath();
+        const g = ctx.createLinearGradient(0, padT, 0, padT + cH);
+        g.addColorStop(0, color.replace(')', `, ${fillAlpha})`).replace('rgb', 'rgba'));
+        g.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'));
+        ctx.fillStyle = g; ctx.fill();
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+        ctx.stroke();
+    }
+
+    let photonPts = [], atonePts = [];
+    if (photon.length) { photonPts = toXY(photon, pMin, pMax); drawLine(photonPts, 'rgb(212, 160, 57)', 0.1); }
+    if (atone.length) { atonePts = toXY(atone, aMin, aMax); drawLine(atonePts, 'rgb(107, 138, 205)', 0.08); }
+
+    // Hover crosshair
+    if (priceChartState.hoveredIndex >= 0) {
+        const idx = priceChartState.hoveredIndex;
+        const xPos = padL + (idx / Math.max(photon.length, atone.length, 1)) * cW;
+        ctx.beginPath(); ctx.strokeStyle = colors.labelColor; ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]); ctx.moveTo(xPos, padT); ctx.lineTo(xPos, padT + cH); ctx.stroke(); ctx.setLineDash([]);
+        if (photonPts[idx]) { ctx.beginPath(); ctx.arc(photonPts[idx].x, photonPts[idx].y, 4, 0, Math.PI * 2); ctx.fillStyle = '#d4a039'; ctx.fill(); }
+        if (atonePts[idx]) { ctx.beginPath(); ctx.arc(atonePts[idx].x, atonePts[idx].y, 4, 0, Math.PI * 2); ctx.fillStyle = '#6b8acd'; ctx.fill(); }
+    }
+
+    // Title
+    ctx.fillStyle = colors.titleColor; ctx.font = '12px "DM Mono", monospace'; ctx.textAlign = 'left';
+    const parts = [];
+    if (showP) parts.push('PHOTON'); if (showA) parts.push('ATONE');
+    ctx.fillText(parts.join(' + ') + ' Price — ' + priceChartState.days + ' Days', padL, padT - 8);
+}
+
+function initPriceChart() {
+    fetchPriceHistory(priceChartState.days);
+
+    document.querySelectorAll('.price-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.price-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            priceChartState.show = btn.dataset.token;
+            drawPriceChart();
+        });
+    });
+
+    document.querySelectorAll('.price-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.price-range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            priceChartState.days = parseInt(btn.dataset.days);
+            fetchPriceHistory(priceChartState.days);
+        });
+    });
+
+    const canvas = document.getElementById('price-chart');
+    if (!canvas) return;
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / (dpr()) / rect.width;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const padL = 70, padR = 70;
+        const cW = (canvas.width / dpr()) - padL - padR;
+        if (mouseX < padL || mouseX > padL + cW) { hideTooltip(); return; }
+        const pct = (mouseX - padL) / cW;
+        const data = priceChartData.photon.length ? priceChartData.photon : priceChartData.atone;
+        const idx = Math.round(pct * (data.length - 1));
+        if (idx >= 0 && idx < data.length) {
+            priceChartState.hoveredIndex = idx;
+            drawPriceChart();
+            showPriceTooltip(e, idx);
+        }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        priceChartState.hoveredIndex = -1;
+        drawPriceChart();
+        hideTooltip();
+    });
+
+    setInterval(() => fetchPriceHistory(priceChartState.days), PRICE_REFRESH * 2);
+}
+
+function dpr() { return window.devicePixelRatio || 1; }
+
+function showPriceTooltip(e, idx) {
+    const tooltip = document.getElementById('price-tooltip');
+    if (!tooltip) return;
+    const photon = priceChartData.photon, atone = priceChartData.atone;
+    let dateStr = '';
+    const src = photon[idx] || atone[idx];
+    if (src) dateStr = new Date(src[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    document.getElementById('tooltip-date').textContent = dateStr;
+    const pRow = document.getElementById('tooltip-photon');
+    const aRow = document.getElementById('tooltip-atone');
+    if (photon[idx] && (priceChartState.show === 'both' || priceChartState.show === 'photon')) {
+        pRow.textContent = 'PHOTON  $' + photon[idx][1].toFixed(6); pRow.style.display = '';
+    } else pRow.style.display = 'none';
+    if (atone[idx] && (priceChartState.show === 'both' || priceChartState.show === 'atone')) {
+        aRow.textContent = 'ATONE   $' + atone[idx][1].toFixed(6); aRow.style.display = '';
+    } else aRow.style.display = 'none';
+    tooltip.style.display = 'block';
+    const wrapper = tooltip.parentElement;
+    const wR = wrapper.getBoundingClientRect();
+    let left = e.clientX - wR.left + 15, top = e.clientY - wR.top - 30;
+    if (left + 200 > wR.width) left -= 210;
+    if (top < 0) top = 10;
+    tooltip.style.left = left + 'px'; tooltip.style.top = top + 'px';
+}
+
+function hideTooltip() {
+    const t = document.getElementById('price-tooltip');
+    if (t) t.style.display = 'none';
+}
+
+// ===== Validator Detail Expansion =====
+
+const _origFetchValidators = fetchValidators;
+
+fetchValidators = async function() {
+    try {
+        const res = await fetchJSON('/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100');
+        const validators = (res.validators || [])
+            .sort((a, b) => parseInt(b.tokens) - parseInt(a.tokens))
+            .slice(0, 20);
+        if (validators.length === 0) return;
+
+        const allValidatorsBonded = (res.validators || []).reduce((sum, v) => sum + parseInt(v.tokens), 0);
+        const totalValidators = (res.validators || []).length;
+
+        let cumulativePower = 0, nakamoto = 0;
+        for (const v of validators) {
+            cumulativePower += parseInt(v.tokens); nakamoto++;
+            if (cumulativePower / allValidatorsBonded > 0.334) break;
+        }
+
+        document.getElementById('val-total-bonded').textContent = formatCompact(allValidatorsBonded / 1e6) + ' ATONE';
+        document.getElementById('val-active-count').textContent = totalValidators.toString();
+        document.getElementById('val-nakamoto').textContent = nakamoto.toString();
+
+        const maxStake = parseInt(validators[0].tokens);
+        const tbody = document.getElementById('val-table-body');
+
+        tbody.innerHTML = validators.map((v, i) => {
+            const rank = i + 1;
+            const moniker = v.description?.moniker || 'Unknown';
+            const website = v.description?.website || '';
+            const tokens = parseInt(v.tokens);
+            const tokensDisplay = formatNumber(tokens / 1e6, 0);
+            const powerPct = (tokens / allValidatorsBonded * 100);
+            const barWidth = (tokens / maxStake * 100);
+            const commission = (parseFloat(v.commission?.commission_rates?.rate || 0) * 100).toFixed(1);
+            const maxComm = (parseFloat(v.commission?.commission_rates?.max_rate || 0) * 100).toFixed(0);
+            const maxChange = (parseFloat(v.commission?.commission_rates?.max_change_rate || 0) * 100).toFixed(1);
+            const rankClass = rank <= 3 ? ' top-3' : '';
+            const valAddr = v.operator_address || '';
+            const description = v.description?.details || '';
+            const jailed = v.jailed ? 'Yes ⚠️' : 'No ✅';
+            const mintscanUrl = valAddr ? `https://www.mintscan.io/atomone/validators/${valAddr}` : '#';
+            const delegatorShares = v.delegator_shares ? formatCompact(parseFloat(v.delegator_shares) / 1e6) : '—';
+
+            return `
+                <div class="val-row val-row-expandable" data-val-index="${i}" title="Click to expand">
+                    <span class="val-rank${rankClass}">${rank}</span>
+                    <div class="val-name">
+                        <span class="val-moniker">${escapeHtml(moniker)}</span>
+                        ${website ? `<span class="val-website">${escapeHtml(website.replace(/^https?:\/\//, ''))}</span>` : ''}
+                    </div>
+                    <span class="val-stake">${tokensDisplay}</span>
+                    <div class="val-power">
+                        <div class="val-power-bar"><div class="val-power-fill" style="width:${barWidth}%"></div></div>
+                        <span class="val-power-pct">${powerPct.toFixed(2)}%</span>
+                    </div>
+                    <span class="val-comm">${commission}%</span>
+                    <span class="val-expand-hint">+</span>
+                </div>
+                <div class="val-detail" id="val-detail-${i}">
+                    <div class="val-detail-inner">
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Commission</span>
+                            <span class="val-detail-value">${commission}%</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Max Commission</span>
+                            <span class="val-detail-value">${maxComm}%</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Max Daily Change</span>
+                            <span class="val-detail-value">${maxChange}%</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Delegator Shares</span>
+                            <span class="val-detail-value">${delegatorShares}</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Jailed</span>
+                            <span class="val-detail-value">${jailed}</span>
+                        </div>
+                        <div class="val-detail-item">
+                            <span class="val-detail-label">Mintscan</span>
+                            <span class="val-detail-value"><a href="${mintscanUrl}" target="_blank" style="color:var(--accent)">View →</a></span>
+                        </div>
+                        ${description ? `<div class="val-detail-desc">${escapeHtml(description)}</div>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Attach expand handlers
+        tbody.querySelectorAll('.val-row-expandable').forEach(row => {
+            row.addEventListener('click', (e) => {
+                e.preventDefault();
+                const idx = row.dataset.valIndex;
+                const detail = document.getElementById('val-detail-' + idx);
+                const isExpanded = row.classList.contains('expanded');
+                tbody.querySelectorAll('.val-row-expandable').forEach(r => r.classList.remove('expanded'));
+                tbody.querySelectorAll('.val-detail').forEach(d => d.style.maxHeight = '0');
+                tbody.querySelectorAll('.val-expand-hint').forEach(h => h.textContent = '+');
+                if (!isExpanded) {
+                    row.classList.add('expanded');
+                    row.querySelector('.val-expand-hint').textContent = '−';
+                    detail.style.maxHeight = detail.scrollHeight + 'px';
+                }
+            });
+        });
+    } catch (err) {
+        console.error('Validator fetch failed:', err);
+    }
+};
+
+// ===== IBC Connections =====
+
+const CHAIN_META = {
+    'osmosis-1': { name: 'Osmosis', icon: '🧪' },
+    'beezee-1': { name: 'BeeZee', icon: '🐝' },
+    'stargaze-1': { name: 'Stargaze', icon: '⭐' },
+    'cosmoshub-4': { name: 'Cosmos Hub', icon: '⚛️' },
+    'juno-1': { name: 'Juno', icon: '🔮' },
+    'akashnet-2': { name: 'Akash', icon: '☁️' },
+    'noble-1': { name: 'Noble', icon: '💎' },
+    'celestia': { name: 'Celestia', icon: '🌌' },
+};
+
+function getChainMeta(chainId) {
+    if (CHAIN_META[chainId]) return CHAIN_META[chainId];
+    const name = chainId.replace(/-\d+$/, '').replace(/^\w/, c => c.toUpperCase());
+    return { name, icon: '🔗' };
+}
+
+async function fetchIBCConnections() {
+    try {
+        const channelRes = await fetchJSON('/ibc/core/channel/v1/channels?pagination.limit=100');
+        const channels = channelRes.channels || [];
+        const channelsByChain = {};
+        const connectionIds = [...new Set(channels.flatMap(c => c.connection_hops))];
+
+        // Resolve connection → client → chain
+        const connectionMap = {};
+        for (const connId of connectionIds) {
+            try {
+                const c = await fetchJSON(`/ibc/core/connection/v1/connections/${connId}`);
+                if (c.connection?.client_id) connectionMap[connId] = c.connection.client_id;
+            } catch (e) { /* skip */ }
+        }
+
+        const clientChainMap = {};
+        const clientIds = [...new Set(Object.values(connectionMap))];
+        for (const cId of clientIds) {
+            try {
+                const r = await fetchJSON(`/ibc/core/client/v1/client_states/${cId}`);
+                if (r.client_state?.chain_id) clientChainMap[cId] = r.client_state.chain_id;
+            } catch (e) { /* skip */ }
+        }
+
+        for (const ch of channels) {
+            const connId = ch.connection_hops[0];
+            const clientId = connectionMap[connId];
+            const chainId = clientId ? (clientChainMap[clientId] || 'unknown') : 'unknown';
+            if (!channelsByChain[chainId]) channelsByChain[chainId] = [];
+            channelsByChain[chainId].push(ch);
+        }
+
+        const grid = document.getElementById('ibc-grid');
+        const sorted = Object.entries(channelsByChain).sort((a, b) => b[1].length - a[1].length);
+        const openChannels = channels.filter(c => c.state === 'STATE_OPEN').length;
+        const uniqueChains = Object.keys(channelsByChain).filter(k => k !== 'unknown').length;
+
+        document.getElementById('ibc-total-channels').textContent = channels.length.toString();
+        document.getElementById('ibc-open-channels').textContent = openChannels.toString();
+        document.getElementById('ibc-connected-chains').textContent = uniqueChains.toString();
+
+        grid.innerHTML = sorted.map(([chainId, chs]) => {
+            const meta = getChainMeta(chainId);
+            const openCount = chs.filter(c => c.state === 'STATE_OPEN').length;
+            const transfers = chs.filter(c => c.port_id === 'transfer');
+            const chList = transfers.slice(0, 3).map(c => c.channel_id).join(', ');
+            return `
+                <div class="ibc-card">
+                    <div class="ibc-card-header">
+                        <div class="ibc-chain-icon">${meta.icon}</div>
+                        <div>
+                            <div class="ibc-chain-name">${escapeHtml(meta.name)}</div>
+                            <div class="ibc-chain-id">${escapeHtml(chainId)}</div>
+                        </div>
+                    </div>
+                    <div class="ibc-card-details">
+                        <div class="ibc-detail-row">
+                            <span class="ibc-detail-label">Status</span>
+                            <span class="ibc-status-badge ${openCount > 0 ? 'ibc-status-open' : 'ibc-status-closed'}">
+                                <span class="ibc-status-dot"></span>
+                                ${openCount > 0 ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        <div class="ibc-detail-row">
+                            <span class="ibc-detail-label">Channels</span>
+                            <span class="ibc-detail-value">${chs.length} total (${openCount} open)</span>
+                        </div>
+                        <div class="ibc-detail-row">
+                            <span class="ibc-detail-label">Transfer</span>
+                            <span class="ibc-detail-value">${chList || 'none'}</span>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        setTimeout(() => initScrollAnimations(), 100);
+    } catch (err) {
+        console.error('IBC connections fetch failed:', err);
+        document.getElementById('ibc-grid').innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;">Failed to load IBC data.</p>';
+    }
+}
+
 // ===== Init =====
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1508,6 +1969,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resizeTimer = setTimeout(() => {
             drawSimulator();
             drawScarcityModel();
+            if (priceChartData.photon.length || priceChartData.atone.length) drawPriceChart();
         }, 200);
     });
 });
