@@ -231,6 +231,8 @@ async function fetchPriceData() {
         }
         priceData.lastFetched = new Date();
         updateArbitrage();
+        // Re-calculate treasury USD with new prices
+        fetchTreasury();
     } catch (err) {
         console.error('Price fetch failed:', err);
     }
@@ -570,7 +572,7 @@ async function fetchGovernance() {
             ` : '';
 
             return `
-                <div class="gov-card">
+                <a href="https://gov.atom.one/proposals/${id}" target="_blank" class="gov-card gov-card-link">
                     <span class="gov-id">#${id}</span>
                     <div class="gov-info">
                         <div class="gov-title">${escapeHtml(title)}</div>
@@ -578,7 +580,7 @@ async function fetchGovernance() {
                     </div>
                     <span class="gov-status ${statusClass}">${status}</span>
                     ${tallyBar}
-                </div>
+                </a>
             `;
         }).join('');
 
@@ -656,9 +658,11 @@ async function fetchValidators() {
             const barWidth = (tokens / maxStake * 100);
             const commission = (parseFloat(v.commission?.commission_rates?.rate || 0) * 100).toFixed(1);
             const rankClass = rank <= 3 ? ' top-3' : '';
+            const valAddr = v.operator_address || '';
+            const mintscanUrl = valAddr ? `https://www.mintscan.io/atomone/validators/${valAddr}` : '';
 
             return `
-                <div class="val-row">
+                <a href="${mintscanUrl}" target="_blank" class="val-row val-row-link" title="View on Mintscan">
                     <span class="val-rank${rankClass}">${rank}</span>
                     <div class="val-name">
                         <span class="val-moniker">${escapeHtml(moniker)}</span>
@@ -670,12 +674,76 @@ async function fetchValidators() {
                         <span class="val-power-pct">${powerPct.toFixed(2)}%</span>
                     </div>
                     <span class="val-comm">${commission}%</span>
-                </div>
+                </a>
             `;
         }).join('');
 
     } catch (err) {
         console.error('Validator fetch failed:', err);
+    }
+}
+
+// ===== Community Pool / Treasury =====
+
+async function fetchTreasury() {
+    try {
+        const res = await fetchJSON('/cosmos/distribution/v1beta1/community_pool');
+        const pool = res.pool || [];
+        
+        const uatone = pool.find(p => p.denom === 'uatone');
+        const uphoton = pool.find(p => p.denom === 'uphoton');
+        
+        const atoneAmount = uatone ? parseFloat(uatone.amount) / 1e6 : 0;
+        const photonAmount = uphoton ? parseFloat(uphoton.amount) / 1e6 : 0;
+        
+        document.getElementById('treasury-atone').textContent = formatNumber(Math.round(atoneAmount));
+        document.getElementById('treasury-photon').textContent = formatNumber(Math.round(photonAmount));
+        
+        // Calculate USD value if we have price data
+        if (priceData.atoneUsd || priceData.photonUsd) {
+            const atoneUsd = atoneAmount * (priceData.atoneUsd || 0);
+            const photonUsd = photonAmount * (priceData.photonUsd || 0);
+            const totalUsd = atoneUsd + photonUsd;
+            document.getElementById('treasury-usd').textContent = '$' + formatCompact(totalUsd);
+        }
+    } catch (err) {
+        console.error('Treasury fetch failed:', err);
+    }
+}
+
+// ===== Block Info / Chain Status Bar =====
+
+let prevBlockHeight = null;
+let prevBlockTime = null;
+
+async function fetchBlockInfo() {
+    try {
+        const res = await fetchJSON('/cosmos/base/tendermint/v1beta1/blocks/latest');
+        const header = res.block?.header || {};
+        
+        const height = parseInt(header.height || '0');
+        const blockTime = new Date(header.time);
+        const chainId = header.chain_id || 'atomone-1';
+        
+        document.getElementById('chain-id').textContent = chainId;
+        document.getElementById('chain-height').textContent = formatNumber(height);
+        
+        // Time ago
+        const ago = Math.round((Date.now() - blockTime.getTime()) / 1000);
+        document.getElementById('chain-last-time').textContent = ago < 60 ? ago + 's ago' : Math.round(ago / 60) + 'm ago';
+        
+        // Block time (seconds between blocks)
+        if (prevBlockHeight && prevBlockTime && height > prevBlockHeight) {
+            const blocksDiff = height - prevBlockHeight;
+            const timeDiff = (blockTime.getTime() - prevBlockTime.getTime()) / 1000;
+            const avgBlockTime = timeDiff / blocksDiff;
+            document.getElementById('chain-block-time').textContent = avgBlockTime.toFixed(1) + 's';
+        }
+        
+        prevBlockHeight = height;
+        prevBlockTime = blockTime;
+    } catch (err) {
+        console.error('Block info fetch failed:', err);
     }
 }
 
@@ -692,7 +760,7 @@ function initScrollAnimations() {
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     const elements = document.querySelectorAll(
-        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table'
+        '.data-card, .flow-step, .detail-card, .token-card, .resource-card, .timeline-item, .security-callout, .calc-container, .arb-card, .arb-signal, .arb-explainer, .sim-container, .code-card, .constitution-block, .constitution-context, .gov-card:not(.skeleton), .gov-active-banner, .val-summary-stat, .val-table, .treasury-grid, .treasury-context, .dfee-card, .dfee-context, .naka-how, .naka-impact'
     );
     elements.forEach(el => observer.observe(el));
 }
@@ -737,8 +805,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch governance and validators (one-time, with 5min refresh)
     fetchGovernance();
     fetchValidators();
+    fetchTreasury();
+    fetchBlockInfo();
     setInterval(fetchGovernance, 300_000);
     setInterval(fetchValidators, 300_000);
+    setInterval(fetchTreasury, 300_000);
+    setInterval(fetchBlockInfo, 10_000); // 10s for block updates
     
     // Re-observe new elements after governance/validators load
     setTimeout(() => initScrollAnimations(), 3000);

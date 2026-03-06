@@ -22,7 +22,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="assets/photon-token-round.svg">
+    <link rel="apple-touch-icon" href="assets/photon-token-round.png">
 </head>
 <body>
     <!-- Grain overlay -->
@@ -30,10 +31,10 @@
     
     <!-- Navigation -->
     <nav class="nav">
-        <div class="nav-logo">
-            <span class="logo-icon">◎</span>
+        <a href="#" class="nav-logo">
+            <img src="assets/photon-token-round.svg" alt="Photon" class="logo-icon-img">
             <span class="logo-text">PHOTON</span>
-        </div>
+        </a>
         <div class="nav-links" id="nav-links">
             <a href="#mechanics">Mechanics</a>
             <a href="#live-data">Live Data</a>
@@ -43,6 +44,7 @@
             <a href="#source-code">Source</a>
             <a href="#governance">Governance</a>
             <a href="#validators">Validators</a>
+            <a href="#treasury">Treasury</a>
             <a href="#resources">Resources</a>
         </div>
         <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation">
@@ -703,6 +705,115 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
         </div>
     </section>
 
+    <!-- Community Pool / Treasury -->
+    <section class="section section-dark" id="treasury">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Treasury</span>
+                <h2 class="section-title">Community pool</h2>
+                <p class="section-desc">The on-chain treasury accumulates from transaction fees and inflation. Governance controls how it's spent.</p>
+            </div>
+
+            <div class="treasury-grid">
+                <div class="data-card data-card-featured">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">🏦</span>
+                        <span class="data-card-title">ATONE Balance</span>
+                    </div>
+                    <div class="data-card-value" id="treasury-atone">Loading...</div>
+                    <div class="data-card-sub">Community pool ATONE</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">◎</span>
+                        <span class="data-card-title">PHOTON Balance</span>
+                    </div>
+                    <div class="data-card-value" id="treasury-photon">Loading...</div>
+                    <div class="data-card-sub">Community pool PHOTON</div>
+                </div>
+                <div class="data-card">
+                    <div class="data-card-header">
+                        <span class="data-card-icon">💰</span>
+                        <span class="data-card-title">USD Value</span>
+                    </div>
+                    <div class="data-card-value" id="treasury-usd">Loading...</div>
+                    <div class="data-card-sub">Estimated total value</div>
+                </div>
+            </div>
+
+            <div class="treasury-context">
+                <p>The community pool funds ecosystem development, security audits, and chain improvements. <a href="https://gov.atom.one/proposals/14" target="_blank">Proposal #14</a> authorized minting PHOTON from the pool's ATONE — the first governance-directed use of the mint mechanism.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dynamic Fee Module -->
+    <section class="section" id="dynamic-fees">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Fee Economics</span>
+                <h2 class="section-title">Dynamic fee pricing</h2>
+                <p class="section-desc">AtomOne uses an adaptive EIP-1559 mechanism to automatically adjust transaction fees based on network congestion.</p>
+            </div>
+
+            <div class="dfee-explainer">
+                <div class="dfee-card">
+                    <div class="dfee-icon">📈</div>
+                    <h4>When blocks are full</h4>
+                    <p>Base gas price increases multiplicatively — fees spike to discourage spam and prioritize legitimate transactions. The learning rate scales aggressively during sustained congestion.</p>
+                </div>
+                <div class="dfee-card">
+                    <div class="dfee-icon">📉</div>
+                    <h4>When blocks are empty</h4>
+                    <p>Base gas price decreases additively — fees gradually return to the floor. This asymmetry (fast up, slow down) prevents fee oscillation and maintains stability.</p>
+                </div>
+                <div class="dfee-card">
+                    <div class="dfee-icon">🛡️</div>
+                    <h4>DOS protection</h4>
+                    <p>Born from a real March 2025 attack where bloated multi-send transactions overloaded nodes. The dynamic fee module automates the response that previously required manual validator intervention.</p>
+                </div>
+            </div>
+
+            <div class="dfee-context">
+                <p>Approved via <a href="https://gov.atom.one/proposals/15" target="_blank">Proposal #15</a>, the <code>x/dynamicfee</code> module implements AIMD (Additive Increase Multiplicative Decrease) EIP-1559 — a refinement of Ethereum's fee model with an adaptive learning rate that responds faster to demand spikes. Since PHOTON is the fee token, dynamic pricing directly affects PHOTON's utility value.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Nakamoto Bonus Explainer -->
+    <section class="section section-dark" id="nakamoto-bonus">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Decentralization Incentive</span>
+                <h2 class="section-title">The Nakamoto bonus</h2>
+                <p class="section-desc">A novel reward mechanism that incentivizes delegators to spread stake across smaller validators — improving the chain's Nakamoto coefficient.</p>
+            </div>
+
+            <div class="naka-grid">
+                <div class="naka-how">
+                    <h4>How it works</h4>
+                    <p>Block rewards are split into two components:</p>
+                    <ul class="naka-list">
+                        <li><strong>Proportional Reward</strong> — distributed based on each validator's stake (the traditional model)</li>
+                        <li><strong>Nakamoto Bonus</strong> — distributed <em>uniformly</em> across all active validators, regardless of stake size</li>
+                    </ul>
+                    <p>The total reward stays the same — but smaller validators get a disproportionately larger share, making delegation to them more attractive. Delegators who spread their stake earn higher effective APR.</p>
+                </div>
+                <div class="naka-impact">
+                    <div class="naka-stat">
+                        <span class="naka-stat-value">5 → ?</span>
+                        <span class="naka-stat-label">Nakamoto coefficient (improving)</span>
+                    </div>
+                    <div class="naka-stat">
+                        <span class="naka-stat-value">34</span>
+                        <span class="naka-stat-label">Ideal coefficient (100 validators)</span>
+                    </div>
+                    <p class="naka-note">Approved via <a href="https://gov.atom.one/proposals/12" target="_blank">Proposal #12</a>. The Nakamoto coefficient measures the minimum validators needed to compromise 33.4% of consensus — the higher, the more decentralized.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Resources Section -->
     <section class="section section-dark" id="resources">
         <div class="container">
@@ -756,18 +867,48 @@ MaxSupply = <span class="code-const">1_000_000_000_000_000</span> <span class="c
         </div>
     </section>
 
+    <!-- Live Chain Status Bar -->
+    <div class="chain-bar">
+        <div class="chain-bar-inner">
+            <div class="chain-bar-item">
+                <span class="chain-bar-dot"></span>
+                <span class="chain-bar-label">Chain</span>
+                <span class="chain-bar-value" id="chain-id">atomone-1</span>
+            </div>
+            <div class="chain-bar-item">
+                <span class="chain-bar-label">Block</span>
+                <span class="chain-bar-value" id="chain-height">—</span>
+            </div>
+            <div class="chain-bar-item">
+                <span class="chain-bar-label">Last Block</span>
+                <span class="chain-bar-value" id="chain-last-time">—</span>
+            </div>
+            <div class="chain-bar-item">
+                <span class="chain-bar-label">Block Time</span>
+                <span class="chain-bar-value" id="chain-block-time">—</span>
+            </div>
+            <div class="chain-bar-item">
+                <span class="chain-bar-label">Node</span>
+                <span class="chain-bar-value"><a href="https://atomone-lcd.nosnode.com/swagger/" target="_blank">NosNode</a></span>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-left">
-                    <span class="logo-icon">◎</span>
-                    <span class="logo-text">PHOTON</span>
-                    <p class="footer-desc">An independent community resource for the Photon fee token of AtomOne. Not affiliated with All in Bits or AtomOne governance.</p>
+                    <img src="assets/photon-token-round.svg" alt="Photon" class="footer-logo-img">
+                    <div>
+                        <span class="logo-text">PHOTON</span>
+                        <p class="footer-desc">An independent community resource for the Photon fee token of AtomOne. Not affiliated with All in Bits or AtomOne governance.</p>
+                    </div>
                 </div>
                 <div class="footer-right">
                     <p>Chain data via <a href="https://nosnode.com" target="_blank">NosNode</a></p>
                     <p>Built by <a href="https://github.com/n0sn0de" target="_blank">n0sn0de</a></p>
+                    <p class="footer-source"><a href="https://github.com/n0sn0de/photon-site" target="_blank">Source on GitHub</a></p>
                 </div>
             </div>
         </div>

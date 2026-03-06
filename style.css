@@ -1909,3 +1909,369 @@ code {
 .val-summary-stat:nth-child(1) { transition-delay: 0s; }
 .val-summary-stat:nth-child(2) { transition-delay: 0.1s; }
 .val-summary-stat:nth-child(3) { transition-delay: 0.2s; }
+
+/* ===== Official Logo in Nav ===== */
+.logo-icon-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+}
+
+.nav-logo {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer-logo-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.footer-left {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.footer-source {
+    margin-top: 0.25rem;
+}
+
+.footer-source a {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* ===== Clickable Gov Cards & Validator Rows ===== */
+.gov-card-link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gov-card-link:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(212, 160, 57, 0.1);
+}
+
+.val-row-link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.val-row-link:hover {
+    background: rgba(212, 160, 57, 0.06);
+}
+
+/* ===== Community Pool / Treasury ===== */
+.treasury-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.treasury-context {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.treasury-context a {
+    color: var(--accent);
+}
+
+/* ===== Dynamic Fee Module ===== */
+.dfee-explainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dfee-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.dfee-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dfee-card:nth-child(1) { transition-delay: 0s; }
+.dfee-card:nth-child(2) { transition-delay: 0.1s; }
+.dfee-card:nth-child(3) { transition-delay: 0.2s; }
+
+.dfee-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.dfee-card h4 {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+    color: var(--text-primary);
+}
+
+.dfee-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.dfee-context {
+    max-width: 720px;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.dfee-context.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dfee-context a {
+    color: var(--accent);
+}
+
+.dfee-context code {
+    background: rgba(212, 160, 57, 0.1);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+}
+
+/* ===== Nakamoto Bonus ===== */
+.naka-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.7fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.naka-how {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.naka-how.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.naka-how h4 {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.naka-how p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 0.8rem;
+}
+
+.naka-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+.naka-list li {
+    padding: 0.6rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.naka-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+}
+
+.naka-impact {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition-delay: 0.15s;
+}
+
+.naka-impact.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.naka-stat {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.naka-stat-value {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+}
+
+.naka-stat-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.naka-note {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-top: 1rem;
+}
+
+.naka-note a {
+    color: var(--accent);
+}
+
+/* ===== Chain Status Bar ===== */
+.chain-bar {
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid var(--border);
+    padding: 0.6rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    overflow-x: auto;
+}
+
+.chain-bar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.chain-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.chain-bar-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+    animation: pulse-green 2s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.chain-bar-label {
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+}
+
+.chain-bar-value {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.chain-bar-value a {
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.chain-bar-value a:hover {
+    opacity: 1;
+}
+
+/* ===== New Sections Scroll Animations ===== */
+.treasury-grid,
+.treasury-context,
+.dfee-card,
+.dfee-context,
+.naka-how,
+.naka-impact {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.treasury-grid.visible,
+.treasury-context.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ===== Mobile: New Sections ===== */
+@media (max-width: 768px) {
+    .treasury-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .dfee-explainer {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .naka-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .chain-bar-inner {
+        gap: 1rem;
+        padding: 0 1rem;
+        font-size: 0.7rem;
+    }
+}
