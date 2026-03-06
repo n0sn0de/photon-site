@@ -8,6 +8,7 @@ interface StatCardProps {
   footer?: string;
   featured?: boolean;
   progress?: number;
+  tokenIcon?: "photon" | "atone";
   children?: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ export function StatCard({
   footer,
   featured,
   progress,
+  tokenIcon,
   children,
 }: StatCardProps) {
   return (
@@ -29,7 +31,15 @@ export function StatCard({
       )}
     >
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-lg">{icon}</span>
+        {tokenIcon ? (
+          <img
+            src={`/assets/${tokenIcon}.svg`}
+            alt={tokenIcon.toUpperCase()}
+            className="w-5 h-5"
+          />
+        ) : (
+          <span className="text-lg">{icon}</span>
+        )}
         <span className="text-xs font-mono uppercase tracking-wider text-text-muted">
           {title}
         </span>

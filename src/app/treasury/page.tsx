@@ -33,6 +33,7 @@ export default async function TreasuryPage() {
           title="ATONE Balance"
           value={formatNumber(Math.round(pool.atone))}
           sub="Community pool ATONE"
+          tokenIcon="atone"
           featured
         />
         <StatCard
@@ -40,6 +41,7 @@ export default async function TreasuryPage() {
           title="PHOTON Balance"
           value={formatNumber(Math.round(pool.photon))}
           sub="Community pool PHOTON"
+          tokenIcon="photon"
         />
         <StatCard
           icon="💰"

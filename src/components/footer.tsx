@@ -5,7 +5,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <img
-              src="/assets/photon-token-round.svg"
+              src="/assets/photon.svg"
               alt="Photon"
               className="w-8 h-8"
             />
