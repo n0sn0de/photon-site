@@ -1,24 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-// ============================================================
-// Hero Background Variants — toggle with ?hero=d|e|f in URL
-//
-// ALL variants keep the center clear for text. Logos live at
-// the edges/periphery only.
-//
-// D: "Centered" — One logo each side, vertically centered in
-//    the void space. Clean and symmetrical.
-//
-// E: "Upper" — Logos sit in the upper void areas (left-high,
-//    right-high) above where the text sits.
-//
-// F: "Staggered" — PHOTON left-center, ATONE right-lower.
-//    Diagonal balance, more dynamic composition.
-// ============================================================
-
-type HeroVariant = "d" | "e" | "f";
+import { useEffect, useRef } from "react";
 
 interface Particle {
   x: number;
@@ -33,19 +15,9 @@ interface Particle {
 
 export function PhotonParticles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [variant, setVariant] = useState<HeroVariant>("d");
   const photonImg = useRef<HTMLImageElement | null>(null);
   const atoneImg = useRef<HTMLImageElement | null>(null);
   const imagesLoaded = useRef(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const v = params.get("hero");
-    if (v === "d" || v === "e" || v === "f") {
-      setVariant(v);
-    }
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -169,45 +141,18 @@ export function PhotonParticles() {
       ctx.restore();
     };
 
-    // Shared logo size + pulse for all variants (one logo per side, same size)
-    const logoSize = () => Math.min(canvas.offsetWidth, canvas.offsetHeight) * 0.24;
-    const logoPulse = (phase: number) => 0.2 + 0.05 * Math.sin(time * 0.007 + phase);
-
-    // ─── VARIANT D: Centered ───────────────────────────────
-    const drawVariantD = (w: number, h: number) => {
-      const size = logoSize();
-      const bob = Math.sin(time * 0.005) * 8;
-
-      // PHOTON — left side, vertically centered
-      drawLogo(photonImg.current, w * 0.1, h * 0.48 + bob, size, logoPulse(0), time * 0.0006, "1, 215, 235", 1.6);
-
-      // ATONE — right side, vertically centered
-      drawLogo(atoneImg.current, w * 0.9, h * 0.48 - bob, size, logoPulse(2), -time * 0.0005, "107, 138, 205", 1.6);
-    };
-
-    // ─── VARIANT E: Upper ──────────────────────────────────
-    const drawVariantE = (w: number, h: number) => {
-      const size = logoSize();
-      const bob = Math.sin(time * 0.004) * 6;
-
-      // PHOTON — upper-left void
-      drawLogo(photonImg.current, w * 0.09, h * 0.25 + bob, size, logoPulse(0), time * 0.0005, "1, 215, 235", 1.6);
-
-      // ATONE — upper-right void
-      drawLogo(atoneImg.current, w * 0.91, h * 0.28 - bob, size, logoPulse(2.5), -time * 0.0004, "107, 138, 205", 1.6);
-    };
-
-    // ─── VARIANT F: Staggered ─────────────────────────────
-    const drawVariantF = (w: number, h: number) => {
-      const size = logoSize();
+    // ─── Token Logos: Staggered ──────────────────────────────
+    const drawTokenLogos = (w: number, h: number) => {
+      const size = Math.min(w, h) * 0.24;
       const bob1 = Math.sin(time * 0.005) * 10;
       const bob2 = Math.sin(time * 0.006 + 1.5) * 10;
+      const pulse = (phase: number) => 0.2 + 0.05 * Math.sin(time * 0.007 + phase);
 
       // PHOTON — left side, slightly above center
-      drawLogo(photonImg.current, w * 0.08, h * 0.35 + bob1, size, logoPulse(0), time * 0.0005, "1, 215, 235", 1.6);
+      drawLogo(photonImg.current, w * 0.08, h * 0.35 + bob1, size, pulse(0), time * 0.0005, "1, 215, 235", 1.6);
 
       // ATONE — right side, slightly below center
-      drawLogo(atoneImg.current, w * 0.92, h * 0.62 + bob2, size, logoPulse(3), -time * 0.0004, "107, 138, 205", 1.6);
+      drawLogo(atoneImg.current, w * 0.92, h * 0.62 + bob2, size, pulse(3), -time * 0.0004, "107, 138, 205", 1.6);
     };
 
     // ─── Main Draw Loop ────────────────────────────────────
@@ -223,9 +168,7 @@ export function PhotonParticles() {
       drawConnections();
 
       if (imagesLoaded.current) {
-        if (variant === "d") drawVariantD(w, h);
-        else if (variant === "e") drawVariantE(w, h);
-        else if (variant === "f") drawVariantF(w, h);
+        drawTokenLogos(w, h);
       }
 
       animationId = requestAnimationFrame(draw);
@@ -246,7 +189,7 @@ export function PhotonParticles() {
       cancelAnimationFrame(animationId);
       window.removeEventListener("resize", handleResize);
     };
-  }, [variant]);
+  }, []);
 
   return (
     <>
@@ -255,49 +198,6 @@ export function PhotonParticles() {
         className="absolute inset-0 w-full h-full pointer-events-none"
         aria-hidden="true"
       />
-      {/* Variant toggle — visible when ?hero param is in URL */}
-      <VariantToggle variant={variant} setVariant={setVariant} />
     </>
-  );
-}
-
-function VariantToggle({ variant, setVariant }: { variant: HeroVariant; setVariant: (v: HeroVariant) => void }) {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setShow(new URLSearchParams(window.location.search).has("hero"));
-    }
-  }, []);
-
-  if (!show) return null;
-
-  const options: { key: HeroVariant; label: string }[] = [
-    { key: "d", label: "Centered" },
-    { key: "e", label: "Upper" },
-    { key: "f", label: "Staggered" },
-  ];
-
-  return (
-    <div className="absolute top-4 right-4 z-50 flex gap-2">
-      {options.map(({ key, label }) => (
-        <button
-          key={key}
-          onClick={() => {
-            setVariant(key);
-            const url = new URL(window.location.href);
-            url.searchParams.set("hero", key);
-            window.history.replaceState({}, "", url.toString());
-          }}
-          className={`px-3 py-1.5 rounded text-xs font-mono transition-colors ${
-            variant === key
-              ? "bg-accent text-bg-primary"
-              : "bg-bg-card/80 text-text-secondary border border-border hover:border-accent/50"
-          }`}
-        >
-          {key.toUpperCase()}: {label}
-        </button>
-      ))}
-    </div>
   );
 }
