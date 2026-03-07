@@ -279,23 +279,23 @@ export function PhotonParticles() {
 
     // ─── VARIANT F: Flanking ───────────────────────────────
     const drawVariantF = (w: number, h: number) => {
-      // Large PHOTON on left, partially off-screen
+      // Large PHOTON on left — ~65% visible
       const bigSize = Math.min(w, h) * 0.55;
-      const leftX = -bigSize * 0.22;
-      const leftY = h * 0.5 + Math.sin(time * 0.004) * 15;
-      const leftPulse = 0.1 + 0.03 * Math.sin(time * 0.006);
-      drawLogo(photonImg.current, leftX, leftY, bigSize, leftPulse, time * 0.0005, "1, 215, 235", 1.3);
+      const leftX = bigSize * 0.18;
+      const leftY = h * 0.45 + Math.sin(time * 0.004) * 12;
+      const leftPulse = 0.18 + 0.05 * Math.sin(time * 0.006);
+      drawLogo(photonImg.current, leftX, leftY, bigSize, leftPulse, time * 0.0005, "1, 215, 235", 1.5);
 
-      // Large ATONE on right, partially off-screen
-      const rightX = w + bigSize * 0.22;
-      const rightY = h * 0.5 + Math.sin(time * 0.005 + 2) * 15;
-      const rightPulse = 0.08 + 0.03 * Math.sin(time * 0.007 + 1);
-      drawLogo(atoneImg.current, rightX, rightY, bigSize * 0.9, rightPulse, -time * 0.0004, "107, 138, 205", 1.3);
+      // Large ATONE on right — ~65% visible
+      const rightX = w - bigSize * 0.18;
+      const rightY = h * 0.55 + Math.sin(time * 0.005 + 2) * 12;
+      const rightPulse = 0.15 + 0.05 * Math.sin(time * 0.007 + 1);
+      drawLogo(atoneImg.current, rightX, rightY, bigSize * 0.5, rightPulse, -time * 0.0004, "107, 138, 205", 1.5);
 
-      // Small accent logos scattered in upper corners
-      const smSize = Math.min(w, h) * 0.06;
-      drawLogo(photonImg.current, w * 0.08, h * 0.12, smSize, 0.06 + 0.02 * Math.sin(time * 0.012));
-      drawLogo(atoneImg.current, w * 0.93, h * 0.08, smSize * 0.9, 0.05 + 0.02 * Math.sin(time * 0.013 + 1), 0, "107, 138, 205");
+      // Small accent logos — ATONE top-left area, PHOTON bottom-right
+      const smSize = Math.min(w, h) * 0.07;
+      drawLogo(atoneImg.current, w * 0.06, h * 0.15, smSize, 0.1 + 0.03 * Math.sin(time * 0.012), 0, "107, 138, 205");
+      drawLogo(photonImg.current, w * 0.94, h * 0.1, smSize * 0.9, 0.1 + 0.03 * Math.sin(time * 0.013 + 1));
 
       // Horizontal particle river — give particles a rightward flow bias
       for (const p of particles) {
