@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/governance", label: "Governance" },
   { href: "/validators", label: "Validators" },
   { href: "/treasury", label: "Treasury" },
+  { href: "/ecosystem", label: "Ecosystem" },
   { href: "/mint", label: "Mint", highlight: true },
   { href: "/faq", label: "FAQ" },
 ];

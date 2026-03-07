@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { fetchConversionRate } from "@/lib/chain-api";
 import { Section } from "@/components/section";
-import { WalletConnect } from "@/components/wallet-connect";
+import { MintSection } from "./mint-section";
 
 export const metadata: Metadata = {
   title: "Mint PHOTON — Burn ATONE On-Chain",
@@ -18,7 +18,7 @@ export default async function MintPage() {
         title="Mint PHOTON on-chain"
         desc="Connect your wallet, burn ATONE, and receive freshly minted PHOTON. The MsgMintPhoton transaction is fee-exempt."
       >
-        <WalletConnect conversionRate={conversionRate} />
+        <MintSection conversionRate={conversionRate} />
       </Section>
 
       {/* Alternative methods */}

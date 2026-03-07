@@ -1,7 +1,6 @@
 "use client";
 
-import { WalletProvider } from "./wallet-provider";
-
 export function ClientProviders({ children }: { children: React.ReactNode }) {
-  return <WalletProvider>{children}</WalletProvider>;
+  // Wallet provider moved to /mint page only — no global cosmos-kit bundle
+  return <>{children}</>;
 }
