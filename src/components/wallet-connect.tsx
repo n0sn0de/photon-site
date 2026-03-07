@@ -187,17 +187,28 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
       // MsgMintPhoton is fee-exempt
       const fee = { amount: [], gas: "200000" };
 
-      const result = await client.signAndBroadcast(address, [msg], fee, "");
-
-      if (result.code !== 0) {
-        throw new Error(
-          result.rawLog || `Transaction failed with code ${result.code}`
-        );
+      let txHash = "";
+      try {
+        const result = await client.signAndBroadcast(address, [msg], fee, "");
+        if (result.code !== 0) {
+          throw new Error(
+            result.rawLog || `Transaction failed with code ${result.code}`
+          );
+        }
+        txHash = result.transactionHash;
+      } catch (broadcastErr: any) {
+        const errMsg = broadcastErr?.message || "";
+        // TX was broadcast but node can't confirm because indexing is off
+        if (errMsg.includes("indexing is disabled")) {
+          txHash = "pending";
+        } else {
+          throw broadcastErr;
+        }
       }
 
-      setMint({ loading: false, txHash: result.transactionHash, error: "" });
+      setMint({ loading: false, txHash, error: "" });
 
-      // Refresh balances
+      // Refresh balances after a few seconds
       setTimeout(() => fetchBalances(address), 3000);
     } catch (err: any) {
       setMint({
@@ -347,15 +358,29 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
         {mint.txHash && (
           <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/20">
             <div className="text-xs text-success font-mono mb-1">
-              ✅ Transaction successful!
+              ✅ Transaction broadcast successfully!
             </div>
-            <a
-              href={`https://www.mintscan.io/atomone/tx/${mint.txHash}`}
-              target="_blank"
-              className="text-xs font-mono break-all"
-            >
-              {mint.txHash}
-            </a>
+            {mint.txHash === "pending" ? (
+              <p className="text-xs font-mono text-text-secondary">
+                Your balances will update shortly. Check{" "}
+                <a
+                  href={`https://www.mintscan.io/atomone/address/${address}`}
+                  target="_blank"
+                  className="text-accent hover:underline"
+                >
+                  your account on Mintscan
+                </a>{" "}
+                to verify.
+              </p>
+            ) : (
+              <a
+                href={`https://www.mintscan.io/atomone/tx/${mint.txHash}`}
+                target="_blank"
+                className="text-xs font-mono break-all text-accent hover:underline"
+              >
+                {mint.txHash}
+              </a>
+            )}
           </div>
         )}
       </div>
