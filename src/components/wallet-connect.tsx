@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useChain } from "@cosmos-kit/react";
 import { Registry } from "@cosmjs/proto-signing";
 import { SigningStargateClient, defaultRegistryTypes } from "@cosmjs/stargate";
+import { Writer } from "protobufjs/minimal";
 import { MSG_MINT_PHOTON_TYPE } from "@/lib/chain-config";
 import { LCD_BASE, RPC_BASE, ATONE_DENOM, PHOTON_DENOM, MICRO_MULTIPLIER } from "@/lib/constants";
 import { formatNumber, formatToken } from "@/lib/format";
@@ -110,22 +111,22 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
       // Create registry with the custom MsgMintPhoton type
       const registry = new Registry(defaultRegistryTypes);
       registry.register(MSG_MINT_PHOTON_TYPE, {
-        encode: (message: any, writer: any) => {
-          // Manual protobuf encoding for MsgMintPhoton
+        encode: (message: any, writer?: any) => {
+          const w = writer || Writer.create();
           if (message.sender) {
-            writer.uint32(10).string(message.sender);
+            w.uint32(10).string(message.sender);
           }
           if (message.amount) {
-            writer.uint32(18).fork();
+            w.uint32(18).fork();
             if (message.amount.denom) {
-              writer.uint32(10).string(message.amount.denom);
+              w.uint32(10).string(message.amount.denom);
             }
             if (message.amount.amount) {
-              writer.uint32(18).string(message.amount.amount);
+              w.uint32(18).string(message.amount.amount);
             }
-            writer.loin();
+            w.join();
           }
-          return writer;
+          return w;
         },
         decode: () => ({}),
         fromPartial: (obj: any) => obj,
