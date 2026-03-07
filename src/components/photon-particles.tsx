@@ -8,17 +8,14 @@ import { useEffect, useRef, useState } from "react";
 // ALL variants keep the center clear for text. Logos live at
 // the edges/periphery only.
 //
-// D: "Gravity Wells" — Large logos anchored in corners as
-//    gravitational attractors. Particles stream between them
-//    in curved orbital paths.
+// D: "Centered" — One logo each side, vertically centered in
+//    the void space. Clean and symmetrical.
 //
-// E: "Horizon" — Token logos float along the bottom like
-//    celestial bodies on a horizon. Aurora-like particle
-//    streams rise upward from them.
+// E: "Upper" — Logos sit in the upper void areas (left-high,
+//    right-high) above where the text sits.
 //
-// F: "Flanking" — Big PHOTON left, big ATONE right, both
-//    partially off-screen. Particle river flows between them
-//    horizontally through the background.
+// F: "Staggered" — PHOTON left-center, ATONE right-lower.
+//    Diagonal balance, more dynamic composition.
 // ============================================================
 
 type HeroVariant = "d" | "e" | "f";
@@ -172,159 +169,45 @@ export function PhotonParticles() {
       ctx.restore();
     };
 
-    // ─── VARIANT D: Gravity Wells ──────────────────────────
+    // Shared logo size + pulse for all variants (one logo per side, same size)
+    const logoSize = () => Math.min(canvas.offsetWidth, canvas.offsetHeight) * 0.24;
+    const logoPulse = (phase: number) => 0.2 + 0.05 * Math.sin(time * 0.007 + phase);
+
+    // ─── VARIANT D: Centered ───────────────────────────────
     const drawVariantD = (w: number, h: number) => {
-      // PHOTON — top-left corner
-      const pSize = Math.min(w, h) * 0.22;
-      const px = pSize * 0.35;
-      const py = pSize * 0.4;
-      const pPulse = 0.18 + 0.04 * Math.sin(time * 0.008);
-      drawLogo(photonImg.current, px, py, pSize, pPulse, time * 0.0008, "1, 215, 235", 1.5);
+      const size = logoSize();
+      const bob = Math.sin(time * 0.005) * 8;
 
-      // ATONE — bottom-right corner
-      const aSize = Math.min(w, h) * 0.2;
-      const ax = w - aSize * 0.35;
-      const ay = h - aSize * 0.4;
-      const aPulse = 0.15 + 0.04 * Math.sin(time * 0.009 + 1);
-      drawLogo(atoneImg.current, ax, ay, aSize, aPulse, -time * 0.0006, "107, 138, 205", 1.5);
+      // PHOTON — left side, vertically centered
+      drawLogo(photonImg.current, w * 0.1, h * 0.48 + bob, size, logoPulse(0), time * 0.0006, "1, 215, 235", 1.6);
 
-      // Small secondary logos — ATONE top-right, PHOTON bottom-left
-      const s2 = Math.min(w, h) * 0.1;
-      drawLogo(atoneImg.current, w - s2 * 0.8, s2 * 1.2, s2, 0.08 + 0.03 * Math.sin(time * 0.01), time * 0.001, "107, 138, 205");
-      drawLogo(photonImg.current, s2 * 0.8, h - s2 * 1.2, s2, 0.08 + 0.03 * Math.sin(time * 0.011), -time * 0.001);
-
-      // Curve particles toward the gravity wells
-      for (const p of particles) {
-        // Pull toward PHOTON well (top-left)
-        const dxP = px - p.x;
-        const dyP = py - p.y;
-        const distP = Math.sqrt(dxP * dxP + dyP * dyP);
-        if (distP > 40 && distP < 350) {
-          const force = 0.008 / (distP * 0.02);
-          p.speedX += (dxP / distP) * force;
-          p.speedY += (dyP / distP) * force;
-        }
-
-        // Pull toward ATONE well (bottom-right)
-        const dxA = ax - p.x;
-        const dyA = ay - p.y;
-        const distA = Math.sqrt(dxA * dxA + dyA * dyA);
-        if (distA > 40 && distA < 350) {
-          const force = 0.006 / (distA * 0.02);
-          p.speedX += (dxA / distA) * force;
-          p.speedY += (dyA / distA) * force;
-        }
-
-        // Speed limit
-        const speed = Math.sqrt(p.speedX * p.speedX + p.speedY * p.speedY);
-        if (speed > 1.2) {
-          p.speedX *= 0.98;
-          p.speedY *= 0.98;
-        }
-      }
+      // ATONE — right side, vertically centered
+      drawLogo(atoneImg.current, w * 0.9, h * 0.48 - bob, size, logoPulse(2), -time * 0.0005, "107, 138, 205", 1.6);
     };
 
-    // ─── VARIANT E: Horizon ────────────────────────────────
+    // ─── VARIANT E: Upper ──────────────────────────────────
     const drawVariantE = (w: number, h: number) => {
-      // Horizon line — faint gradient at bottom 20%
-      const horizonY = h * 0.82;
-      const horizonGrad = ctx.createLinearGradient(0, horizonY - 30, 0, h);
-      horizonGrad.addColorStop(0, "rgba(1, 215, 235, 0)");
-      horizonGrad.addColorStop(0.3, "rgba(1, 215, 235, 0.015)");
-      horizonGrad.addColorStop(1, "rgba(0, 19, 71, 0.1)");
-      ctx.fillStyle = horizonGrad;
-      ctx.fillRect(0, horizonY - 30, w, h - horizonY + 30);
+      const size = logoSize();
+      const bob = Math.sin(time * 0.004) * 6;
 
-      // Thin horizon line
-      ctx.beginPath();
-      ctx.moveTo(0, horizonY);
-      ctx.lineTo(w, horizonY);
-      ctx.strokeStyle = `rgba(1, 215, 235, ${0.06 + 0.02 * Math.sin(time * 0.005)})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      // PHOTON — upper-left void
+      drawLogo(photonImg.current, w * 0.09, h * 0.25 + bob, size, logoPulse(0), time * 0.0005, "1, 215, 235", 1.6);
 
-      // Token logos sitting on the horizon
-      const logoSize = Math.min(w * 0.08, 55);
-      const positions = [
-        { x: w * 0.12, type: "photon" as const, phase: 0 },
-        { x: w * 0.32, type: "atone" as const, phase: 1.5 },
-        { x: w * 0.55, type: "photon" as const, phase: 3 },
-        { x: w * 0.75, type: "atone" as const, phase: 4.5 },
-        { x: w * 0.92, type: "photon" as const, phase: 6 },
-      ];
-
-      for (const pos of positions) {
-        const bob = Math.sin(time * 0.006 + pos.phase) * 6;
-        const y = horizonY - logoSize * 0.4 + bob;
-        const img = pos.type === "photon" ? photonImg.current : atoneImg.current;
-        const color = pos.type === "photon" ? "1, 215, 235" : "107, 138, 205";
-        const opacity = 0.2 + 0.06 * Math.sin(time * 0.01 + pos.phase);
-        drawLogo(img, pos.x, y, logoSize, opacity, 0, color, 1.8);
-
-        // Aurora streams rising from each logo
-        const streamCount = 5;
-        for (let s = 0; s < streamCount; s++) {
-          const streamT = ((time * 0.3 + s * 60 + pos.phase * 30) % 300) / 300;
-          const streamX = pos.x + Math.sin(time * 0.003 + s * 2 + pos.phase) * 25;
-          const streamY = y - streamT * h * 0.5;
-          const streamOpacity = opacity * 0.3 * (1 - streamT) * (streamT > 0.05 ? 1 : streamT / 0.05);
-
-          ctx.beginPath();
-          ctx.arc(streamX, streamY, 1.2 + (1 - streamT) * 1.5, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${color}, ${streamOpacity})`;
-          ctx.fill();
-        }
-      }
+      // ATONE — upper-right void
+      drawLogo(atoneImg.current, w * 0.91, h * 0.28 - bob, size, logoPulse(2.5), -time * 0.0004, "107, 138, 205", 1.6);
     };
 
-    // ─── VARIANT F: Flanking ───────────────────────────────
+    // ─── VARIANT F: Staggered ─────────────────────────────
     const drawVariantF = (w: number, h: number) => {
-      // Large PHOTON on left — ~65% visible
-      const bigSize = Math.min(w, h) * 0.55;
-      const leftX = bigSize * 0.18;
-      const leftY = h * 0.45 + Math.sin(time * 0.004) * 12;
-      const leftPulse = 0.18 + 0.05 * Math.sin(time * 0.006);
-      drawLogo(photonImg.current, leftX, leftY, bigSize, leftPulse, time * 0.0005, "1, 215, 235", 1.5);
+      const size = logoSize();
+      const bob1 = Math.sin(time * 0.005) * 10;
+      const bob2 = Math.sin(time * 0.006 + 1.5) * 10;
 
-      // Large ATONE on right — ~65% visible
-      const rightX = w - bigSize * 0.18;
-      const rightY = h * 0.55 + Math.sin(time * 0.005 + 2) * 12;
-      const rightPulse = 0.15 + 0.05 * Math.sin(time * 0.007 + 1);
-      drawLogo(atoneImg.current, rightX, rightY, bigSize * 0.5, rightPulse, -time * 0.0004, "107, 138, 205", 1.5);
+      // PHOTON — left side, slightly above center
+      drawLogo(photonImg.current, w * 0.08, h * 0.35 + bob1, size, logoPulse(0), time * 0.0005, "1, 215, 235", 1.6);
 
-      // Small accent logos — ATONE top-left area, PHOTON bottom-right
-      const smSize = Math.min(w, h) * 0.07;
-      drawLogo(atoneImg.current, w * 0.06, h * 0.15, smSize, 0.1 + 0.03 * Math.sin(time * 0.012), 0, "107, 138, 205");
-      drawLogo(photonImg.current, w * 0.94, h * 0.1, smSize * 0.9, 0.1 + 0.03 * Math.sin(time * 0.013 + 1));
-
-      // Horizontal particle river — give particles a rightward flow bias
-      for (const p of particles) {
-        // Add subtle horizontal current from left to right
-        p.speedX += 0.002;
-        // Gentle vertical centering
-        const dy = h * 0.5 - p.y;
-        p.speedY += dy * 0.00003;
-        // Dampen
-        p.speedX *= 0.999;
-        p.speedY *= 0.998;
-        // Speed limit
-        if (Math.abs(p.speedX) > 0.8) p.speedX *= 0.95;
-      }
-
-      // Flowing energy line connecting the two sides
-      ctx.beginPath();
-      const segments = 80;
-      for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const x = t * w;
-        const y = h * 0.5 + Math.sin(t * Math.PI * 3 + time * 0.01) * 30 + Math.sin(t * Math.PI * 7 + time * 0.02) * 8;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      const flowOpacity = 0.025 + 0.01 * Math.sin(time * 0.008);
-      ctx.strokeStyle = `rgba(1, 215, 235, ${flowOpacity})`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      // ATONE — right side, slightly below center
+      drawLogo(atoneImg.current, w * 0.92, h * 0.62 + bob2, size, logoPulse(3), -time * 0.0004, "107, 138, 205", 1.6);
     };
 
     // ─── Main Draw Loop ────────────────────────────────────
@@ -390,9 +273,9 @@ function VariantToggle({ variant, setVariant }: { variant: HeroVariant; setVaria
   if (!show) return null;
 
   const options: { key: HeroVariant; label: string }[] = [
-    { key: "d", label: "Gravity Wells" },
-    { key: "e", label: "Horizon" },
-    { key: "f", label: "Flanking" },
+    { key: "d", label: "Centered" },
+    { key: "e", label: "Upper" },
+    { key: "f", label: "Staggered" },
   ];
 
   return (
