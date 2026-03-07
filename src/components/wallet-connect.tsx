@@ -4,10 +4,58 @@ import { useState, useCallback, useEffect } from "react";
 import { useChain } from "@cosmos-kit/react";
 import { Registry } from "@cosmjs/proto-signing";
 import { SigningStargateClient, defaultRegistryTypes } from "@cosmjs/stargate";
-import { Writer } from "protobufjs/minimal";
 import { MSG_MINT_PHOTON_TYPE } from "@/lib/chain-config";
 import { LCD_BASE, RPC_BASE, ATONE_DENOM, PHOTON_DENOM, MICRO_MULTIPLIER } from "@/lib/constants";
 import { formatNumber, formatToken } from "@/lib/format";
+
+// Manual protobuf encoder for MsgMintPhoton
+// Proto: message MsgMintPhoton { string sender = 1; cosmos.base.v1beta1.Coin amount = 2; }
+// Coin:  message Coin { string denom = 1; string amount = 2; }
+function encodeVarint(value: number): number[] {
+  const bytes: number[] = [];
+  let v = value;
+  while (v > 0x7f) {
+    bytes.push((v & 0x7f) | 0x80);
+    v >>>= 7;
+  }
+  bytes.push(v & 0x7f);
+  return bytes;
+}
+
+function encodeStringField(fieldNumber: number, value: string): number[] {
+  const encoded = new TextEncoder().encode(value);
+  return [
+    ...encodeVarint((fieldNumber << 3) | 2),
+    ...encodeVarint(encoded.length),
+    ...encoded,
+  ];
+}
+
+function encodeBytesField(fieldNumber: number, value: Uint8Array): number[] {
+  return [
+    ...encodeVarint((fieldNumber << 3) | 2),
+    ...encodeVarint(value.length),
+    ...value,
+  ];
+}
+
+function encodeMsgMintPhoton(message: any): Uint8Array {
+  const parts: number[] = [];
+  if (message.sender) {
+    parts.push(...encodeStringField(1, message.sender));
+  }
+  if (message.amount) {
+    const coinParts: number[] = [];
+    if (message.amount.denom) {
+      coinParts.push(...encodeStringField(1, message.amount.denom));
+    }
+    if (message.amount.amount) {
+      coinParts.push(...encodeStringField(2, message.amount.amount));
+    }
+    parts.push(...encodeBytesField(2, new Uint8Array(coinParts)));
+  }
+  return new Uint8Array(parts);
+}
 
 interface BalanceState {
   atoneBalance: string;
@@ -111,23 +159,9 @@ export function WalletConnect({ conversionRate }: { conversionRate: number }) {
       // Create registry with the custom MsgMintPhoton type
       const registry = new Registry(defaultRegistryTypes);
       registry.register(MSG_MINT_PHOTON_TYPE, {
-        encode: (message: any, writer?: any) => {
-          const w = writer || Writer.create();
-          if (message.sender) {
-            w.uint32(10).string(message.sender);
-          }
-          if (message.amount) {
-            w.uint32(18).fork();
-            if (message.amount.denom) {
-              w.uint32(10).string(message.amount.denom);
-            }
-            if (message.amount.amount) {
-              w.uint32(18).string(message.amount.amount);
-            }
-            w.join();
-          }
-          return w;
-        },
+        encode: (message: any) => ({
+          finish: () => encodeMsgMintPhoton(message),
+        }),
         decode: () => ({}),
         fromPartial: (obj: any) => obj,
       } as any);

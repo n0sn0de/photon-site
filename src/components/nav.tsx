@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/data", label: "Data" },
+  { href: "/simulator", label: "Simulator" },
+  { href: "/staking", label: "Staking" },
   { href: "/mechanics", label: "Mechanics" },
   { href: "/governance", label: "Governance" },
   { href: "/validators", label: "Validators" },
